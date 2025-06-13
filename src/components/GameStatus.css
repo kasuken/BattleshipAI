@@ -1,0 +1,296 @@
+/* GameStatus Component Styles */
+
+.game-status {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin: 20px;
+  min-width: 350px;
+}
+
+.status-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.status-header h2 {
+  margin: 0 0 15px 0;
+  font-size: 2rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(45deg, #fff, #e0e7ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.setup-status p {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  opacity: 0.9;
+}
+
+.start-button {
+  background: linear-gradient(45deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.start-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.playing-status {
+  text-align: center;
+}
+
+.turn-indicator {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+}
+
+.turn-indicator.player {
+  background-color: rgba(16, 185, 129, 0.2);
+  border: 2px solid #10b981;
+  animation: pulse-green 2s infinite;
+}
+
+.turn-indicator.ai {
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 2px solid #ef4444;
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.battle-stats {
+  display: flex;
+  justify-content: space-around;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.game-over-status {
+  text-align: center;
+}
+
+.winner-announcement {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  padding: 20px;
+  border-radius: 10px;
+  animation: celebration 1s ease-in-out;
+}
+
+.winner-announcement.player {
+  background: linear-gradient(45deg, #10b981, #059669);
+  color: white;
+}
+
+.winner-announcement.ai {
+  background: linear-gradient(45deg, #ef4444, #dc2626);
+  color: white;
+}
+
+@keyframes celebration {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.reset-button {
+  background: linear-gradient(45deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+}
+
+.reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.fleet-status {
+  margin-top: 20px;
+}
+
+.ship-status-section {
+  margin-bottom: 20px;
+}
+
+.ship-status-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.ship-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ship-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.ship-status.intact {
+  border-left: 4px solid #10b981;
+}
+
+.ship-status.damaged {
+  border-left: 4px solid #f59e0b;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.ship-status.sunk {
+  border-left: 4px solid #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  opacity: 0.7;
+}
+
+.ship-name {
+  font-weight: bold;
+  min-width: 80px;
+}
+
+.ship-health {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  justify-content: center;
+}
+
+.health-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.health-cell.intact {
+  background-color: #10b981;
+}
+
+.health-cell.hit {
+  background-color: #ef4444;
+}
+
+.ship-status-text {
+  font-size: 1.2rem;
+  min-width: 30px;
+  text-align: center;
+}
+
+.game-controls {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.control-button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.control-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .game-status {
+    margin: 10px;
+    padding: 15px;
+    min-width: auto;
+  }
+  
+  .status-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .turn-indicator {
+    font-size: 1.2rem;
+    padding: 10px;
+  }
+  
+  .winner-announcement {
+    font-size: 2rem;
+    padding: 15px;
+  }
+  
+  .battle-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .ship-status {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .ship-health {
+    justify-content: center;
+  }
+}
