@@ -33,11 +33,14 @@ const GameStatus: React.FC<GameStatusProps> = ({
 
   const playerStatus = getShipStatus(playerShips);
   const aiStatus = getShipStatus(aiShips);
-  const allShipsPlaced = playerShips.every(ship => ship.isPlaced);
-
-  const renderShipStatusList = (ships: Ship[], title: string) => (
+  const allShipsPlaced = playerShips.every(ship => ship.isPlaced);  const renderShipStatusList = (ships: Ship[], title: string, hideDetails = false) => (
     <div className="ship-status-section">
       <h4>{title}</h4>
+      {hideDetails && (
+        <p className="enemy-fleet-note">
+          💡 Hit counts shown only - exact damage positions unknown
+        </p>
+      )}
       <div className="ship-status-list">
         {ships.map(ship => {
           const hitCount = ship.hits.filter(hit => hit).length;
@@ -47,13 +50,19 @@ const GameStatus: React.FC<GameStatusProps> = ({
           return (
             <div key={ship.id} className={`ship-status ${isSunk ? 'sunk' : isDamaged ? 'damaged' : 'intact'}`}>
               <span className="ship-name">{ship.name}</span>
-              <div className="ship-health">
-                {Array.from({ length: ship.size }, (_, i) => (
-                  <div key={i} className={`health-cell ${ship.hits[i] ? 'hit' : 'intact'}`} />
-                ))}
-              </div>
+              {!hideDetails ? (
+                <div className="ship-health">
+                  {Array.from({ length: ship.size }, (_, i) => (
+                    <div key={i} className={`health-cell ${ship.hits[i] ? 'hit' : 'intact'}`} />
+                  ))}
+                </div>
+              ) : (
+                <div className="ship-health-hidden">
+                  <span className="hit-count">{hitCount}/{ship.size}</span>
+                </div>
+              )}
               <span className="ship-status-text">
-                {isSunk ? '💀' : isDamaged ? '🔥' : '⚓'}
+                {isSunk ? '💀' : isDamaged ? '🔥' : hideDetails ? '❓' : '⚓'}
               </span>
             </div>
           );
@@ -115,12 +124,10 @@ const GameStatus: React.FC<GameStatusProps> = ({
             </button>
           </div>
         )}
-      </div>
-      
-      {gamePhase !== 'setup' && (
+      </div>      {gamePhase !== 'setup' && (
         <div className="fleet-status">
           {renderShipStatusList(playerShips, '🚢 Your Fleet')}
-          {gamePhase === 'gameOver' && renderShipStatusList(aiShips, '🏴‍☠️ Enemy Fleet')}
+          {renderShipStatusList(aiShips, '🏴‍☠️ Enemy Fleet', gamePhase === 'playing')}
         </div>
       )}
       
