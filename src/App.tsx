@@ -77,13 +77,23 @@ function App() {
     winner: null,
     selectedShip: null,
   }));
-
+  
+  // AI states
   const [aiPreviousHits, setAiPreviousHits] = useState<Position[]>([]);
+  const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);
   const [showAISettings, setShowAISettings] = useState(false);
   const [useAI, setUseAI] = useState(false);
+  const [aiVsAi, setAiVsAi] = useState(false);
+  const [aiMoveInProgress, setAiMoveInProgress] = useState(false);
+  const [playerAiMoveInProgress, setPlayerAiMoveInProgress] = useState(false);
+  
+  // AI refs
   const aiInstance = useRef<LMStudioAI | null>(null);
+  const playerAiInstance = useRef<LMStudioAI | null>(null);
   const aiHitPositions = useRef<Position[]>([]);
   const aiSunkShips = useRef<string[]>([]);
+  const playerAiHitPositions = useRef<Position[]>([]);
+  const playerAiSunkShips = useRef<string[]>([]);
 
   // Initialize AI with default config
   useEffect(() => {
@@ -94,6 +104,7 @@ function App() {
       maxTokens: 50
     };
     aiInstance.current = new LMStudioAI(defaultConfig);
+    playerAiInstance.current = new LMStudioAI(defaultConfig); // Second AI for "player" side
   }, []);
 
   // Initialize AI ships
@@ -169,18 +180,32 @@ function App() {
   };
 
   const handleStartGame = () => {
-    const allShipsPlaced = gameState.playerShips.every(ship => ship.isPlaced);
-    if (allShipsPlaced) {
+    // In AI vs AI mode, we'll randomly place ships for player side as well
+    if (aiVsAi) {
+      const { board: playerBoard, placedShips: playerShips } = placeShipsRandomly(createInitialShips());
       setGameState(prev => ({
         ...prev,
+        playerBoard,
+        playerShips,
         gamePhase: 'playing',
         currentTurn: 'player',
       }));
+    } else {
+      // In normal mode, check if player has placed all ships
+      const allShipsPlaced = gameState.playerShips.every(ship => ship.isPlaced);
+      if (allShipsPlaced) {
+        setGameState(prev => ({
+          ...prev,
+          gamePhase: 'playing',
+          currentTurn: 'player',
+        }));
+      }
     }
   };
 
   const handlePlayerAttack = (position: Position) => {
-    if (gameState.gamePhase !== 'playing' || gameState.currentTurn !== 'player') return;
+    // Don't allow clicks when in AI vs AI mode or when not player's turn
+    if (aiVsAi || gameState.gamePhase !== 'playing' || gameState.currentTurn !== 'player') return;
 
     const { newBoard, newShips, hit } = makeAttack(gameState.aiBoard, gameState.aiShips, position);
 
@@ -201,10 +226,11 @@ function App() {
     }
   };
 
-  // AI turn logic
+  // AI turn logic (Red AI)
   useEffect(() => {
-    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai') {
+    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai' && !aiMoveInProgress) {
       const timer = setTimeout(async () => {
+        setAiMoveInProgress(true);
         let aiMove: Position;
         
         try {
@@ -269,16 +295,98 @@ function App() {
             winner: 'ai',
           }));
         }
+
+        setAiMoveInProgress(false);
       }, 1500); // Slightly longer delay for AI to "think"
 
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, useAI, aiPreviousHits]);
+  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, useAI, aiPreviousHits, aiMoveInProgress]);
+
+  // Player AI turn logic (Blue AI) - for AI vs AI mode
+  useEffect(() => {
+    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'player' && aiVsAi && !playerAiMoveInProgress) {
+      const timer = setTimeout(async () => {
+        setPlayerAiMoveInProgress(true);
+        let playerAiMove: Position;
+        
+        try {
+          if (useAI && playerAiInstance.current) {
+            // Use LM Studio AI
+            playerAiMove = await playerAiInstance.current.makeMove(
+              gameState.aiBoard,
+              playerAiPreviousHits,
+              playerAiHitPositions.current, 
+              playerAiSunkShips.current
+            );
+          } else {
+            // Fallback to simple AI
+            playerAiMove = getSimpleAIMove(gameState.aiBoard, playerAiPreviousHits);
+          }
+        } catch (error) {
+          console.error('Player AI move failed, using fallback:', error);
+          playerAiMove = getSimpleAIMove(gameState.aiBoard, playerAiPreviousHits);
+        }
+
+        const { newBoard, newShips, hit, sunk } = makeAttack(gameState.aiBoard, gameState.aiShips, playerAiMove);
+
+        // Update Player AI tracking
+        if (hit) {
+          playerAiHitPositions.current.push(playerAiMove);
+          setPlayerAiPreviousHits(prev => [...prev, playerAiMove]);
+        }
+
+        // Check if Player AI sunk a ship
+        if (sunk) {
+          const sunkShip = newShips.find(ship => 
+            ship.positions.some(pos => pos.row === playerAiMove.row && pos.col === playerAiMove.col) &&
+            ship.hits.every(hit => hit)
+          );
+          if (sunkShip && !playerAiSunkShips.current.includes(sunkShip.name)) {
+            playerAiSunkShips.current.push(sunkShip.name);
+          }
+        }
+
+        // Record move result for Player AI learning
+        if (useAI && playerAiInstance.current) {
+          const sunkShipName = sunk ? newShips.find(ship => 
+            ship.positions.some(pos => pos.row === playerAiMove.row && pos.col === playerAiMove.col) &&
+            ship.hits.every(hit => hit)
+          )?.name : undefined;
+          
+          playerAiInstance.current.recordMoveResult(playerAiMove, hit, sunk, sunkShipName);
+        }
+
+        setGameState(prev => ({
+          ...prev,
+          aiBoard: newBoard,
+          aiShips: newShips,
+          currentTurn: hit ? 'player' : 'ai', // Player AI continues if hit
+        }));
+
+        // Check for Player AI win
+        if (isGameOver(newShips)) {
+          setGameState(prev => ({
+            ...prev, 
+            gamePhase: 'gameOver',
+            winner: 'player',
+          }));
+        }
+        
+        setPlayerAiMoveInProgress(false);
+      }, 1000); // Slightly shorter delay than the enemy AI
+      
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.currentTurn, gameState.gamePhase, gameState.aiBoard, gameState.aiShips, useAI, playerAiPreviousHits, playerAiMoveInProgress, aiVsAi]);
 
   // AI Configuration handlers
   const handleAIConfigChange = (config: AIConfig) => {
     if (aiInstance.current) {
       aiInstance.current.updateConfig(config);
+    }
+    if (playerAiInstance.current) {
+      playerAiInstance.current.updateConfig(config);
     }
   };
 
@@ -297,6 +405,14 @@ function App() {
   const toggleAIMode = () => {
     setUseAI(!useAI);
   };
+  
+  const toggleAIVsAIMode = () => {
+    // If switching to AI vs AI mode during setup, auto-place ships
+    if (!aiVsAi && gameState.gamePhase === 'setup') {
+      handleRandomPlacement();
+    }
+    setAiVsAi(!aiVsAi);
+  };
 
   const handleResetGame = () => {
     const { board: aiBoard, placedShips: aiShips } = placeShipsRandomly(createInitialShips());
@@ -304,8 +420,13 @@ function App() {
     // Reset AI state
     aiHitPositions.current = [];
     aiSunkShips.current = [];
+    playerAiHitPositions.current = [];
+    playerAiSunkShips.current = [];
     if (aiInstance.current) {
       aiInstance.current.resetGame();
+    }
+    if (playerAiInstance.current) {
+      playerAiInstance.current.resetGame();
     }
     
     setGameState({
@@ -319,6 +440,7 @@ function App() {
       selectedShip: null,
     });
     setAiPreviousHits([]);
+    setPlayerAiPreviousHits([]);
   };
 
   return (
@@ -333,6 +455,13 @@ function App() {
           >
             {useAI ? '🤖 LM Studio AI' : '🎯 Simple AI'}
           </button>
+          <button
+            className={`ai-toggle ${aiVsAi ? 'active' : ''}`}
+            onClick={toggleAIVsAIMode}
+            title={aiVsAi ? 'AI vs AI Mode' : 'Player vs AI Mode'}
+          >
+            {aiVsAi ? '🤖 AI vs AI' : '👤 Player vs AI'}
+          </button>
           <button 
             className="ai-settings-btn"
             onClick={() => setShowAISettings(true)}
@@ -342,35 +471,47 @@ function App() {
           </button>
         </div>
       </div>
-      
+
       <div className="game-container">
-        <div className="game-boards">
-          <Board
-            board={gameState.playerBoard}
-            ships={gameState.playerShips}
-            isPlayer={true}
-            onCellClick={() => {}} // Player board is not clickable for attacks
-            showShips={true}
-            selectedShip={gameState.selectedShip ? gameState.playerShips.find(s => s.id === gameState.selectedShip) : null}
-            onShipPlace={handleShipPlace}
-            gamePhase={gameState.gamePhase}
-          />
-          
-          {gameState.gamePhase !== 'setup' && (
-            <Board
+        <div className="board-container">
+          <div className="board-wrapper player-board">
+            <h2>{aiVsAi ? '� Blue AI Fleet' : '�🚢 Your Fleet'}</h2>
+            <Board 
+              board={gameState.playerBoard}
+              ships={gameState.playerShips}
+              isPlayer={true}
+              showShips={true}
+              onCellClick={() => {}} // Player can't attack own board
+              gamePhase={gameState.gamePhase}
+            />
+          </div>
+          <div className="board-wrapper enemy-board">
+            <h2>{aiVsAi ? '🔴 Red AI Fleet' : '🏴‍☠️ Enemy Fleet'}</h2>
+            <Board 
               board={gameState.aiBoard}
               ships={gameState.aiShips}
               isPlayer={false}
+              showShips={gameState.gamePhase === 'gameOver'} 
               onCellClick={handlePlayerAttack}
-              showShips={gameState.gamePhase === 'gameOver'}
               gamePhase={gameState.gamePhase}
             />
-          )}
+          </div>
         </div>
-        
+
         <div className="game-sidebar">
-          {gameState.gamePhase === 'setup' && (
-            <ShipSelector
+          <GameStatus 
+            gamePhase={gameState.gamePhase}
+            currentTurn={gameState.currentTurn}
+            winner={gameState.winner}
+            playerShips={gameState.playerShips}
+            aiShips={gameState.aiShips}
+            onStartGame={handleStartGame}
+            onResetGame={handleResetGame}
+            aiVsAi={aiVsAi}
+          />
+          
+          {gameState.gamePhase === 'setup' && !aiVsAi && (
+            <ShipSelector 
               ships={gameState.playerShips}
               selectedShip={gameState.selectedShip}
               onShipSelect={handleShipSelect}
@@ -379,21 +520,11 @@ function App() {
               onClearBoard={handleClearBoard}
             />
           )}
-          
-          <GameStatus
-            gamePhase={gameState.gamePhase}
-            currentTurn={gameState.currentTurn}
-            winner={gameState.winner}
-            playerShips={gameState.playerShips}
-            aiShips={gameState.aiShips}
-            onStartGame={handleStartGame}
-            onResetGame={handleResetGame}
-          />
         </div>
       </div>
-      
+
       {showAISettings && (
-        <AISettings
+        <AISettings 
           isVisible={showAISettings}
           onClose={() => setShowAISettings(false)}
           onConfigChange={handleAIConfigChange}
@@ -404,4 +535,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

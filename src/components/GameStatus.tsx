@@ -10,6 +10,7 @@ interface GameStatusProps {
   aiShips: Ship[];
   onStartGame: () => void;
   onResetGame: () => void;
+  aiVsAi?: boolean;
 }
 
 const GameStatus: React.FC<GameStatusProps> = ({
@@ -19,7 +20,8 @@ const GameStatus: React.FC<GameStatusProps> = ({
   playerShips,
   aiShips,
   onStartGame,
-  onResetGame
+  onResetGame,
+  aiVsAi = false
 }) => {
   const getShipStatus = (ships: Ship[]) => {
     const totalShips = ships.length;
@@ -75,22 +77,26 @@ const GameStatus: React.FC<GameStatusProps> = ({
     <div className="game-status">
       <div className="status-header">
         <h2>Battleship</h2>
-        
-        {gamePhase === 'setup' && (
+          {gamePhase === 'setup' && (
           <div className="setup-status">
-            <p>Place your ships to begin the battle!</p>
-            {allShipsPlaced && (
+            {aiVsAi ? (
+              <p>AI vs AI simulation ready!</p>
+            ) : (
+              <p>Place your ships to begin the battle!</p>
+            )}
+            {(aiVsAi || allShipsPlaced) && (
               <button className="start-button" onClick={onStartGame}>
-                ⚓ Start Battle!
+                ⚓ {aiVsAi ? 'Start AI Battle!' : 'Start Battle!'}
               </button>
             )}
           </div>
         )}
         
         {gamePhase === 'playing' && (
-          <div className="playing-status">
-            <div className={`turn-indicator ${currentTurn}`}>
-              {currentTurn === 'player' ? '🎯 Your Turn' : '🤖 Enemy Turn'}
+          <div className="playing-status">            <div className={`turn-indicator ${currentTurn}`}>
+              {aiVsAi 
+                ? (currentTurn === 'player' ? '🔵 Blue AI Turn' : '🔴 Red AI Turn')
+                : (currentTurn === 'player' ? '🎯 Your Turn' : '🤖 Enemy Turn')}
             </div>
             <div className="battle-stats">
               <div className="stat">
@@ -108,16 +114,21 @@ const GameStatus: React.FC<GameStatusProps> = ({
             </div>
           </div>
         )}
-        
-        {gamePhase === 'gameOver' && winner && (
+          {gamePhase === 'gameOver' && winner && (
           <div className="game-over-status">
             <div className={`winner-announcement ${winner}`}>
-              {winner === 'player' ? '🎉 Victory!' : '💀 Defeat!'}
+              {aiVsAi 
+                ? (winner === 'player' ? '🎉 Blue AI Wins!' : '🎉 Red AI Wins!') 
+                : (winner === 'player' ? '🎉 Victory!' : '💀 Defeat!')}
             </div>
             <p>
-              {winner === 'player' 
-                ? 'Congratulations! You sunk all enemy ships!' 
-                : 'The enemy has destroyed your fleet!'}
+              {aiVsAi 
+                ? (winner === 'player' 
+                    ? 'Blue AI successfully destroyed all enemy ships!' 
+                    : 'Red AI successfully destroyed all enemy ships!')
+                : (winner === 'player' 
+                    ? 'Congratulations! You sunk all enemy ships!' 
+                    : 'The enemy has destroyed your fleet!')}
             </p>
             <button className="reset-button" onClick={onResetGame}>
               ⚡ New Game
