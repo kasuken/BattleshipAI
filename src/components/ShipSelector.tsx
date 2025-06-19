@@ -1,3 +1,7 @@
+/**
+ * NOTE: This component is no longer used in the AI vs AI only mode.
+ * It's kept for reference but could be safely removed.
+ */
 import React from 'react';
 import type { Ship } from '../types';
 import './ShipSelector.css';
