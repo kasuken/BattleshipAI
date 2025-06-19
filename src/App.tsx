@@ -128,48 +128,70 @@ function App() {
 
   // Red AI turn logic
   useEffect(() => {
-    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai' && !aiMoveInProgress) {
-      const timer = setTimeout(async () => {
+    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai' && !aiMoveInProgress) {      const timer = setTimeout(async () => {
         setAiMoveInProgress(true);
-        let aiMove: Position;
-        
-        try {
+        // Initialize with a default value that will be overwritten
+        let aiMove: Position = { row: 0, col: 0 };
+          try {
           if (aiInstance.current) {
-            try {
-              // Use LM Studio AI
-              aiMove = await aiInstance.current.makeMove(
-                gameState.playerBoard,
-                aiPreviousHits,
-                aiHitPositions.current,
-                aiSunkShips.current
-              );
-              console.log("Red AI made move:", aiMove);
-            } catch (error) {
-              console.error("Failed to get move from Red AI:", error);
-              // Try again with simpler request
+            // Implement a retry mechanism with up to 3 attempts
+            let attemptCount = 0;
+            let success = false;
+            
+            while (!success && attemptCount < 3) {
+              attemptCount++;
               try {
-                // Retry with simplified arguments
-                aiMove = await aiInstance.current.makeMove(
-                  gameState.playerBoard,
-                  aiPreviousHits,
-                  [],
-                  []
-                );
-                console.log("Red AI retry succeeded:", aiMove);
-              } catch (retryError) {
-                console.error("Red AI retry also failed:", retryError);
-                // Last resort - pick a valid move without LM Studio AI
-                const available: Position[] = [];
-                for (let row = 0; row < 10; row++) {
-                  for (let col = 0; col < 10; col++) {
-                    if (!gameState.playerBoard[row][col].isHit && !gameState.playerBoard[row][col].isMiss) {
-                      available.push({ row, col });
-                    }
+                // Use LM Studio AI with different levels of context based on attempt number
+                if (attemptCount === 1) {
+                  // First attempt with full context
+                  aiMove = await aiInstance.current.makeMove(
+                    gameState.playerBoard,
+                    aiPreviousHits,
+                    aiHitPositions.current,
+                    aiSunkShips.current
+                  );
+                } else if (attemptCount === 2) {
+                  // Second attempt with partial context
+                  aiMove = await aiInstance.current.makeMove(
+                    gameState.playerBoard,
+                    aiPreviousHits,
+                    [],
+                    []
+                  );
+                } else {
+                  // Third attempt with minimal context
+                  aiMove = await aiInstance.current.makeMove(
+                    gameState.playerBoard,
+                    [],
+                    [],
+                    []
+                  );
+                }
+                
+                console.log(`Red AI made move on attempt ${attemptCount}:`, aiMove);
+                success = true;
+              } catch (error) {
+                console.error(`Red AI attempt ${attemptCount} failed:`, error);
+                // Only wait briefly between attempts
+                if (attemptCount < 3) {
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              }
+            }
+            
+            if (!success) {
+              // All attempts failed, use simple AI as fallback
+              console.error("All Red AI attempts failed, using fallback move");
+              const available: Position[] = [];
+              for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 10; col++) {
+                  if (!gameState.playerBoard[row][col].isHit && !gameState.playerBoard[row][col].isMiss) {
+                    available.push({ row, col });
                   }
                 }
-                aiMove = available[Math.floor(Math.random() * available.length)];
-                console.log("Red AI using last resort move:", aiMove);
               }
+              aiMove = available[Math.floor(Math.random() * available.length)];
+              console.log("Red AI using last resort move:", aiMove);
             }
           } else {
             // Emergency fallback - shouldn't happen in normal operation
@@ -235,48 +257,70 @@ function App() {
 
   // Blue AI turn logic
   useEffect(() => {
-    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'player' && !playerAiMoveInProgress) {
-      const timer = setTimeout(async () => {
+    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'player' && !playerAiMoveInProgress) {      const timer = setTimeout(async () => {
         setPlayerAiMoveInProgress(true);
-        let playerAiMove: Position;
-        
-        try {
+        // Initialize with a default value that will be overwritten
+        let playerAiMove: Position = { row: 0, col: 0 };
+          try {
           if (playerAiInstance.current) {
-            try {
-              // Use LM Studio AI
-              playerAiMove = await playerAiInstance.current.makeMove(
-                gameState.aiBoard,
-                playerAiPreviousHits,
-                playerAiHitPositions.current, 
-                playerAiSunkShips.current
-              );
-              console.log("Blue AI made move:", playerAiMove);
-            } catch (error) {
-              console.error("Failed to get move from Blue AI:", error);
-              // Try again with simpler request
+            // Implement a retry mechanism with up to 3 attempts
+            let attemptCount = 0;
+            let success = false;
+            
+            while (!success && attemptCount < 3) {
+              attemptCount++;
               try {
-                // Retry with simplified arguments
-                playerAiMove = await playerAiInstance.current.makeMove(
-                  gameState.aiBoard,
-                  playerAiPreviousHits,
-                  [],
-                  []
-                );
-                console.log("Blue AI retry succeeded:", playerAiMove);
-              } catch (retryError) {
-                console.error("Blue AI retry also failed:", retryError);
-                // Last resort - pick a valid move without LM Studio AI
-                const available: Position[] = [];
-                for (let row = 0; row < 10; row++) {
-                  for (let col = 0; col < 10; col++) {
-                    if (!gameState.aiBoard[row][col].isHit && !gameState.aiBoard[row][col].isMiss) {
-                      available.push({ row, col });
-                    }
+                // Use LM Studio AI with different levels of context based on attempt number
+                if (attemptCount === 1) {
+                  // First attempt with full context
+                  playerAiMove = await playerAiInstance.current.makeMove(
+                    gameState.aiBoard,
+                    playerAiPreviousHits,
+                    playerAiHitPositions.current,
+                    playerAiSunkShips.current
+                  );
+                } else if (attemptCount === 2) {
+                  // Second attempt with partial context
+                  playerAiMove = await playerAiInstance.current.makeMove(
+                    gameState.aiBoard,
+                    playerAiPreviousHits,
+                    [],
+                    []
+                  );
+                } else {
+                  // Third attempt with minimal context
+                  playerAiMove = await playerAiInstance.current.makeMove(
+                    gameState.aiBoard,
+                    [],
+                    [],
+                    []
+                  );
+                }
+                
+                console.log(`Blue AI made move on attempt ${attemptCount}:`, playerAiMove);
+                success = true;
+              } catch (error) {
+                console.error(`Blue AI attempt ${attemptCount} failed:`, error);
+                // Only wait briefly between attempts
+                if (attemptCount < 3) {
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              }
+            }
+            
+            if (!success) {
+              // All attempts failed, use simple AI as fallback
+              console.error("All Blue AI attempts failed, using fallback move");
+              const available: Position[] = [];
+              for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 10; col++) {
+                  if (!gameState.aiBoard[row][col].isHit && !gameState.aiBoard[row][col].isMiss) {
+                    available.push({ row, col });
                   }
                 }
-                playerAiMove = available[Math.floor(Math.random() * available.length)];
-                console.log("Blue AI using last resort move:", playerAiMove);
               }
+              playerAiMove = available[Math.floor(Math.random() * available.length)];
+              console.log("Blue AI using last resort move:", playerAiMove);
             }
           } else {
             // Emergency fallback - shouldn't happen in normal operation

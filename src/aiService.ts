@@ -89,28 +89,38 @@ Choose the most strategic grid coordinate to attack next. Respond with ONLY the 
       const prompt = this.createGameStateContext(gameState);
       
       console.log("🔄 AI is making a move...");
-      
-      try {
+        try {
         // Direct API call with simple format
+        const apiStartTime = Date.now();
+        console.log(`📡 Sending request to API endpoint: ${this.config.endpoint}`);
+        
         const response = await fetch(`${this.config.endpoint}/v1/chat/completions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{ role: "user", content: prompt }],
-            max_tokens: 10
+            max_tokens: 10,
+            model: this.config.model,
+            temperature: this.config.temperature
           })
         });
         
-        console.log(`📡 Response status: ${response.status}`);
+        const apiTime = Date.now() - apiStartTime;
+        console.log(`📡 Response status: ${response.status} (took ${apiTime}ms)`);
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`❌ API Error: ${errorText}`);
-          throw new Error(`API call failed: ${errorText}`);
+          console.error(`❌ API Error [${response.status}]: ${errorText}`);
+          throw new Error(`API call failed [${response.status}]: ${errorText}`);
         }
         
         const data = await response.json();
-        console.log("📊 API Response:", data);
+        
+        if (this.config.debug) {
+          console.log("📊 Full API Response:", JSON.stringify(data));
+        } else {
+          console.log("📊 API Response received successfully");
+        }
         
         // Extract the response text
         let responseText = "";
@@ -119,7 +129,7 @@ Choose the most strategic grid coordinate to attack next. Respond with ONLY the 
         } else if (data.choices?.[0]?.text) {
           responseText = data.choices[0].text.trim();
         } else {
-          throw new Error("No valid response from API");
+          throw new Error("No valid response content found in API response: " + JSON.stringify(data.choices || []));
         }
         
         console.log(`🎯 AI chose: ${responseText}`);
@@ -153,18 +163,52 @@ Choose the most strategic grid coordinate to attack next. Respond with ONLY the 
       return this.getStrategicBackupMove(board, hitPositions);
     }
   }
-
   private parseCoordinate(response: string): Position {
     // Look for coordinate pattern (A1, B5, J10, etc.)
+    console.log(`🔍 Attempting to parse coordinate from: "${response}"`);
+    
+    // Try to extract using regex pattern
     const match = response.match(/([A-J])(\d{1,2})/i);
     
     if (!match) {
+      // If no match, try to find any letters and numbers that could be a coordinate
+      console.error(`🚫 No standard coordinate pattern found in: "${response}"`);
+      
+      // Look for any single letter followed by any number as a fallback
+      const fallbackMatch = response.match(/([A-Za-z])(\d{1,2})/);
+      
+      if (fallbackMatch) {
+        const letter = fallbackMatch[1].toUpperCase();
+        const number = parseInt(fallbackMatch[2]);
+        
+        // Check if this could plausibly be a coordinate
+        if (letter >= 'A' && letter <= 'J' && number >= 1 && number <= 10) {
+          console.log(`⚠️ Found potential coordinate with fallback method: ${letter}${number}`);
+          const col = letter.charCodeAt(0) - 65; // A=0, B=1, etc.
+          const row = number - 1; // 1=0, 2=1, etc.
+          return { row, col };
+        }
+      }
+      
       throw new Error(`Cannot parse coordinate from: "${response}"`);
     }
 
-    const col = match[1].toUpperCase().charCodeAt(0) - 65; // A=0, B=1, etc.
-    const row = parseInt(match[2]) - 1; // 1=0, 2=1, etc.
+    const letter = match[1].toUpperCase();
+    const number = parseInt(match[2]);
+    
+    // Validate the extracted values
+    if (letter < 'A' || letter > 'J') {
+      throw new Error(`Invalid column letter: ${letter}`);
+    }
+    
+    if (number < 1 || number > 10) {
+      throw new Error(`Invalid row number: ${number}`);
+    }
+    
+    const col = letter.charCodeAt(0) - 65; // A=0, B=1, etc.
+    const row = number - 1; // 1=0, 2=1, etc.
 
+    console.log(`✅ Successfully parsed coordinate: ${letter}${number} -> [${row},${col}]`);
     return { row, col };
   }
 
