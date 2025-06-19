@@ -77,9 +77,10 @@ function App() {
   // AI states
   const [aiPreviousHits, setAiPreviousHits] = useState<Position[]>([]);
   const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);  const [showAISettings, setShowAISettings] = useState(false);
-  const [aiMoveInProgress, setAiMoveInProgress] = useState(false);
-  const [playerAiMoveInProgress, setPlayerAiMoveInProgress] = useState(false);
+  const [aiMoveInProgress, setAiMoveInProgress] = useState(false);  const [playerAiMoveInProgress, setPlayerAiMoveInProgress] = useState(false);
   const [autoRestartCountdown, setAutoRestartCountdown] = useState<number | null>(null);
+  const [blueAIWins, setBlueAIWins] = useState(0);
+  const [redAIWins, setRedAIWins] = useState(0);
   
   // AI refs
   const aiInstance = useRef<LMStudioAI | null>(null);
@@ -237,10 +238,12 @@ function App() {
           playerBoard: newBoard,
           playerShips: newShips,
           currentTurn: hit ? 'ai' : 'player', // AI continues if hit
-        }));
-
-        // Check for AI win
+        }));        // Check for AI win
         if (isGameOver(newShips)) {
+          // Increment Red AI win count
+          setRedAIWins(prevWins => prevWins + 1);
+          console.log('🔴 Red AI won a game!');
+          
           setGameState(prev => ({
             ...prev,
             gamePhase: 'gameOver',
@@ -366,10 +369,12 @@ function App() {
           aiBoard: newBoard,
           aiShips: newShips,
           currentTurn: hit ? 'player' : 'ai', // Player AI continues if hit
-        }));
-
-        // Check for Player AI win
+        }));        // Check for Player AI win
         if (isGameOver(newShips)) {
+          // Increment Blue AI win count
+          setBlueAIWins(prevWins => prevWins + 1);
+          console.log('🔵 Blue AI won a game!');
+          
           setGameState(prev => ({
             ...prev, 
             gamePhase: 'gameOver',
@@ -471,17 +476,69 @@ function App() {
     }
   }, [gameState.gamePhase, autoRestartCountdown]);
 
+  // Load win counts from local storage
+  useEffect(() => {
+    const savedBlueWins = localStorage.getItem('blueAIWins');
+    const savedRedWins = localStorage.getItem('redAIWins');
+    
+    if (savedBlueWins) {
+      setBlueAIWins(parseInt(savedBlueWins, 10));
+    }
+    
+    if (savedRedWins) {
+      setRedAIWins(parseInt(savedRedWins, 10));
+    }
+  }, []);
+
+  // Save win counts to local storage whenever they change
+  useEffect(() => {
+    localStorage.setItem('blueAIWins', blueAIWins.toString());
+  }, [blueAIWins]);
+  
+  useEffect(() => {
+    localStorage.setItem('redAIWins', redAIWins.toString());
+  }, [redAIWins]);
+
   return (
-    <div className="app">
-      <div className="game-header">
+    <div className="app">      <div className="game-header">
         <h1>⚓ Battleship AI vs AI ⚓</h1>
-        <div className="ai-controls">
+        
+        <div className="win-counter-display">
+          <div className="win-counter blue">
+            <span className="win-counter-icon">🔵</span>
+            <span className="win-counter-label">Blue AI:</span>
+            <span className="win-counter-value">{blueAIWins}</span>
+            <span className="win-counter-text">wins</span>
+          </div>
+          
+          <div className="win-counter-separator">vs</div>
+          
+          <div className="win-counter red">
+            <span className="win-counter-icon">🔴</span>
+            <span className="win-counter-label">Red AI:</span>
+            <span className="win-counter-value">{redAIWins}</span>
+            <span className="win-counter-text">wins</span>
+          </div>
+        </div>
+          <div className="ai-controls">
           <button 
             className="ai-settings-btn"
             onClick={() => setShowAISettings(true)}
             title="Configure AI Settings"
           >
             ⚙️ AI Settings
+          </button>
+          <button 
+            className="reset-stats-btn"
+            onClick={() => {
+              setBlueAIWins(0);
+              setRedAIWins(0);
+              localStorage.removeItem('blueAIWins');
+              localStorage.removeItem('redAIWins');
+            }}
+            title="Reset Win Statistics"
+          >
+            🔄 Reset Stats
           </button>
         </div>
       </div>
