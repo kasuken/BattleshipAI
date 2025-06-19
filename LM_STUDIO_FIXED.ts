@@ -1,3 +1,6 @@
+// This is a simpler fixed version to replace aiService.ts
+// Run npm run dev and then copy this content over the existing aiService.ts file
+
 // AI service for integrating with LM Studio
 import type { Board, Position } from './types';
 

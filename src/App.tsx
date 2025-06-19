@@ -101,7 +101,8 @@ function App() {
       endpoint: 'http://localhost:1234',
       model: 'local-model',
       temperature: 0.7,
-      maxTokens: 50
+      maxTokens: 50,
+      debug: true // Enable debug mode to help troubleshoot LM Studio connection
     };
     aiInstance.current = new LMStudioAI(defaultConfig);
     playerAiInstance.current = new LMStudioAI(defaultConfig); // Second AI for "player" side
@@ -234,21 +235,69 @@ function App() {
         let aiMove: Position;
         
         try {
-          if (useAI && aiInstance.current) {
-            // Use LM Studio AI
+          if (aiVsAi && aiInstance.current) {
+            // In AI vs AI mode, we must use LM Studio AI with no fallback
             aiMove = await aiInstance.current.makeMove(
               gameState.playerBoard,
               aiPreviousHits,
               aiHitPositions.current,
               aiSunkShips.current
             );
+            console.log("Red AI made move:", aiMove);
+          } else if (useAI && aiInstance.current) {
+            try {
+              // Use LM Studio AI in player vs AI mode
+              aiMove = await aiInstance.current.makeMove(
+                gameState.playerBoard,
+                aiPreviousHits,
+                aiHitPositions.current,
+                aiSunkShips.current
+              );
+              console.log("Red AI made move:", aiMove);
+            } catch (error) {
+              console.error("Failed to get move from Red AI:", error);
+              // Fallback to simple AI only in player vs AI mode
+              aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
+              console.log("Using fallback for Red AI move:", aiMove);
+            }
           } else {
-            // Fallback to simple AI
+            // Fallback to simple AI when not using LM Studio
             aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
           }
         } catch (error) {
-          console.error('AI move failed, using fallback:', error);
-          aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
+          // Handle error differently depending on game mode
+          if (aiVsAi) {
+            console.error('Red AI move failed in AI vs AI mode. Retrying with LM Studio AI:', error);
+            
+            // Try again with the same LM Studio API but with a simpler request
+            try {
+              // Retry with LM Studio AI one more time
+              aiMove = await aiInstance.current!.makeMove(
+                gameState.playerBoard,
+                aiPreviousHits,
+                [], // Simplify the request by removing additional context
+                []
+              );
+              console.log("Red AI retry succeeded:", aiMove);
+            } catch (retryError) {
+              console.error('Red AI retry also failed, using last resort move:', retryError);
+              // Last resort - pick a valid move with minimal AI
+              const available: Position[] = [];
+              for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 10; col++) {
+                  if (!gameState.playerBoard[row][col].isHit && !gameState.playerBoard[row][col].isMiss) {
+                    available.push({ row, col });
+                  }
+                }
+              }
+              aiMove = available[Math.floor(Math.random() * available.length)];
+              console.log("Red AI using last resort move:", aiMove);
+            }
+          } else {
+            // In normal player vs AI mode, we can use the simple AI as fallback
+            console.error('AI move failed in player vs AI mode, using simple fallback:', error);
+            aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
+          }
         }
 
         const { newBoard, newShips, hit, sunk } = makeAttack(gameState.playerBoard, gameState.playerShips, aiMove);
@@ -301,7 +350,7 @@ function App() {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, useAI, aiPreviousHits, aiMoveInProgress]);
+  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, useAI, aiPreviousHits, aiMoveInProgress, aiVsAi]);
 
   // Player AI turn logic (Blue AI) - for AI vs AI mode
   useEffect(() => {
@@ -311,21 +360,47 @@ function App() {
         let playerAiMove: Position;
         
         try {
-          if (useAI && playerAiInstance.current) {
-            // Use LM Studio AI
+          // In AI vs AI mode, we always use LM Studio AI for the player side too
+          if (aiVsAi && playerAiInstance.current) {
             playerAiMove = await playerAiInstance.current.makeMove(
               gameState.aiBoard,
               playerAiPreviousHits,
               playerAiHitPositions.current, 
               playerAiSunkShips.current
             );
+            console.log("Blue AI made move:", playerAiMove);
           } else {
-            // Fallback to simple AI
+            // This code path should never be reached in AI vs AI mode
+            console.error("Unexpected condition: Player AI turn in non-AI vs AI mode");
             playerAiMove = getSimpleAIMove(gameState.aiBoard, playerAiPreviousHits);
           }
         } catch (error) {
-          console.error('Player AI move failed, using fallback:', error);
-          playerAiMove = getSimpleAIMove(gameState.aiBoard, playerAiPreviousHits);
+          console.error('Player AI move failed in AI vs AI mode. Retrying with LM Studio AI:', error);
+          
+          // Try again with the same LM Studio API but with a simpler request
+          try {
+            // Retry with LM Studio AI one more time
+            playerAiMove = await playerAiInstance.current!.makeMove(
+              gameState.aiBoard,
+              playerAiPreviousHits,
+              [], // Simplify the request by removing additional context
+              []
+            );
+            console.log("Blue AI retry succeeded:", playerAiMove);
+          } catch (retryError) {
+            console.error('Blue AI retry also failed, using last resort move:', retryError);
+            // Last resort - pick a valid move with minimal AI
+            const available: Position[] = [];
+            for (let row = 0; row < 10; row++) {
+              for (let col = 0; col < 10; col++) {
+                if (!gameState.aiBoard[row][col].isHit && !gameState.aiBoard[row][col].isMiss) {
+                  available.push({ row, col });
+                }
+              }
+            }
+            playerAiMove = available[Math.floor(Math.random() * available.length)];
+            console.log("Blue AI using last resort move:", playerAiMove);
+          }
         }
 
         const { newBoard, newShips, hit, sunk } = makeAttack(gameState.aiBoard, gameState.aiShips, playerAiMove);
@@ -407,10 +482,36 @@ function App() {
   };
   
   const toggleAIVsAIMode = () => {
-    // If switching to AI vs AI mode during setup, auto-place ships
-    if (!aiVsAi && gameState.gamePhase === 'setup') {
-      handleRandomPlacement();
+    if (!aiVsAi) {
+      // Switching TO AI vs AI mode
+      
+      // Auto-place ships if in setup phase
+      if (gameState.gamePhase === 'setup') {
+        handleRandomPlacement();
+      }
+      
+      // ALWAYS force LM Studio AI to be used in AI vs AI mode
+      setUseAI(true);
+      
+      // If AI instances don't exist yet, create them
+      if (!aiInstance.current || !playerAiInstance.current) {
+        const defaultConfig: AIConfig = {
+          endpoint: 'http://localhost:1234',
+          model: 'local-model',
+          temperature: 0.7,
+          maxTokens: 50,
+          debug: true
+        };
+        
+        aiInstance.current = new LMStudioAI(defaultConfig);
+        playerAiInstance.current = new LMStudioAI(defaultConfig);
+        console.log('🤖 Created new AI instances for AI vs AI mode');
+      }
+      
+      console.log('🤖 Enabled AI vs AI mode with LM Studio AI');
     }
+    
+    // Toggle the mode
     setAiVsAi(!aiVsAi);
   };
 
@@ -451,6 +552,7 @@ function App() {
           <button 
             className={`ai-toggle ${useAI ? 'active' : ''}`}
             onClick={toggleAIMode}
+            disabled={aiVsAi} // Disable toggle when in AI vs AI mode
             title={useAI ? 'Using LM Studio AI' : 'Using Simple AI'}
           >
             {useAI ? '🤖 LM Studio AI' : '🎯 Simple AI'}
@@ -458,7 +560,7 @@ function App() {
           <button
             className={`ai-toggle ${aiVsAi ? 'active' : ''}`}
             onClick={toggleAIVsAIMode}
-            title={aiVsAi ? 'AI vs AI Mode' : 'Player vs AI Mode'}
+            title={aiVsAi ? 'AI vs AI Mode (LM Studio)' : 'Player vs AI Mode'}
           >
             {aiVsAi ? '🤖 AI vs AI' : '👤 Player vs AI'}
           </button>
