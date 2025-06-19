@@ -13,9 +13,11 @@ This file provides instructions for running and testing the AI vs AI mode in the
 
 1. Start the game by running `npm run dev` in the project directory
 2. Open the game in a web browser (usually at http://localhost:5173)
-3. Click the "🤖 AI vs AI" button to enable AI vs AI mode
-4. Click "Start Game" to begin the battle
-5. Watch as the two AI players (Blue AI and Red AI) battle each other
+3. Click "Start AI Battle!" to begin the battle
+4. Watch as the two AI players (Blue AI and Red AI) battle each other
+5. When a game finishes, a 20-second countdown will begin for auto-restart
+6. A new game will automatically start after the countdown completes
+7. You can cancel auto-restart by clicking the "Cancel Auto-Restart" button
 
 ## Important Notes
 
@@ -55,3 +57,19 @@ If you encounter issues with LM Studio connectivity:
   4. As a last resort, a strategic AI algorithm that targets adjacent cells for hits
 - The coordinate parsing has been improved to handle various response formats
 - Detailed logging helps diagnose issues with the LM Studio API responses
+
+## Auto-Restart Feature
+
+The AI vs AI mode includes an automatic game restart feature for continuous gameplay:
+
+- When a game ends (either Blue AI or Red AI wins), a 20-second countdown begins
+- A visual indicator shows the countdown with a pulsing animation
+- After the countdown completes, a new game automatically starts
+- Ships are randomly placed for both AIs in the new game
+- This creates a continuous simulation environment for the AIs to battle
+- You can cancel the auto-restart at any time by clicking the cancel button
+
+This feature is particularly useful for:
+- Running long-term AI simulation experiments
+- Observing how different LM Studio models perform over multiple games
+- Creating a "spectator mode" demonstration of AI vs AI gameplay

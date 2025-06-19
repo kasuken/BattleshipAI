@@ -76,10 +76,10 @@ function App() {
   
   // AI states
   const [aiPreviousHits, setAiPreviousHits] = useState<Position[]>([]);
-  const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);
-  const [showAISettings, setShowAISettings] = useState(false);
+  const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);  const [showAISettings, setShowAISettings] = useState(false);
   const [aiMoveInProgress, setAiMoveInProgress] = useState(false);
   const [playerAiMoveInProgress, setPlayerAiMoveInProgress] = useState(false);
+  const [autoRestartCountdown, setAutoRestartCountdown] = useState<number | null>(null);
   
   // AI refs
   const aiInstance = useRef<LMStudioAI | null>(null);
@@ -405,7 +405,6 @@ function App() {
       return false;
     }
   };
-
   const handleResetGame = () => {
     const { board: aiBoard, placedShips: aiShips } = placeShipsRandomly(createInitialShips());
     const { board: playerBoard, placedShips: playerShips } = placeShipsRandomly(createInitialShips());
@@ -422,6 +421,7 @@ function App() {
       playerAiInstance.current.resetGame();
     }
     
+    // First reset to setup state
     setGameState({
       playerBoard,
       aiBoard,
@@ -434,7 +434,42 @@ function App() {
     });
     setAiPreviousHits([]);
     setPlayerAiPreviousHits([]);
+    
+    // Then automatically start a new game after a short delay
+    setTimeout(() => {
+      console.log('🎮 Auto-starting new game!');
+      setGameState(prev => ({
+        ...prev,
+        gamePhase: 'playing',
+      }));
+    }, 500);
   };
+
+  // Auto-restart effect
+  useEffect(() => {
+    // Start countdown when game is over
+    if (gameState.gamePhase === 'gameOver' && autoRestartCountdown === null) {
+      console.log('🔄 Game over! Starting auto-restart countdown: 20 seconds');
+      setAutoRestartCountdown(20);
+    }
+    
+    // Handle the countdown timer
+    if (autoRestartCountdown !== null && autoRestartCountdown > 0) {
+      const timer = setTimeout(() => {
+        setAutoRestartCountdown(prev => prev !== null ? prev - 1 : null);
+        console.log(`⏱️ Auto-restart in ${autoRestartCountdown - 1} seconds...`);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Auto-restart the game when countdown reaches zero
+    if (autoRestartCountdown === 0) {
+      console.log('🎮 Auto-restarting new game!');
+      handleResetGame();
+      setAutoRestartCountdown(null);
+    }
+  }, [gameState.gamePhase, autoRestartCountdown]);
 
   return (
     <div className="app">
@@ -483,9 +518,16 @@ function App() {
             winner={gameState.winner}
             playerShips={gameState.playerShips}
             aiShips={gameState.aiShips}
-            onStartGame={handleStartGame}
-            onResetGame={handleResetGame}
+            onStartGame={handleStartGame}            onResetGame={handleResetGame}
           />
+          {gameState.gamePhase === 'gameOver' && autoRestartCountdown !== null && (
+            <div className="auto-restart-countdown">
+              <p>🔄 New game starting in {autoRestartCountdown} seconds...</p>
+              <button onClick={() => setAutoRestartCountdown(null)}>
+                Cancel Auto-Restart
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
