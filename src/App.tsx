@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import type { GameState, Position } from './types';
+import { useState, useEffect, useRef } from 'react';
+import type { GameState, Position, Cell } from './types';
 import { 
   createEmptyBoard, 
   createInitialShips, 
@@ -8,13 +8,63 @@ import {
   removeShip, 
   makeAttack, 
   isGameOver, 
-  placeShipsRandomly,
-  getAIMove
+  placeShipsRandomly
 } from './utils';
+import { LMStudioAI, type AIConfig } from './aiService';
 import Board from './components/Board';
 import ShipSelector from './components/ShipSelector';
 import GameStatus from './components/GameStatus';
+import AISettings from './components/AISettings';
 import './App.css';
+
+// Simple AI fallback function
+const getSimpleAIMove = (board: Cell[][], previousHits: Position[]): Position => {
+  const availablePositions: Position[] = [];
+  
+  for (let row = 0; row < 10; row++) {
+    for (let col = 0; col < 10; col++) {
+      if (!board[row][col].isHit && !board[row][col].isMiss) {
+        availablePositions.push({ row, col });
+      }
+    }
+  }
+
+  if (availablePositions.length === 0) {
+    return { row: 0, col: 0 };
+  }
+
+  // If there are previous hits, try adjacent positions first
+  if (previousHits.length > 0) {
+    const adjacentPositions: Position[] = [];
+    
+    previousHits.forEach(hit => {
+      const directions = [
+        { row: -1, col: 0 }, { row: 1, col: 0 },
+        { row: 0, col: -1 }, { row: 0, col: 1 }
+      ];
+      
+      directions.forEach(dir => {
+        const newRow = hit.row + dir.row;
+        const newCol = hit.col + dir.col;
+        
+        if (
+          newRow >= 0 && newRow < 10 &&
+          newCol >= 0 && newCol < 10 &&
+          !board[newRow][newCol].isHit &&
+          !board[newRow][newCol].isMiss
+        ) {
+          adjacentPositions.push({ row: newRow, col: newCol });
+        }
+      });
+    });
+
+    if (adjacentPositions.length > 0) {
+      return adjacentPositions[Math.floor(Math.random() * adjacentPositions.length)];
+    }
+  }
+
+  return availablePositions[Math.floor(Math.random() * availablePositions.length)];
+};
 
 function App() {
   const [gameState, setGameState] = useState<GameState>(() => ({
@@ -29,6 +79,22 @@ function App() {
   }));
 
   const [aiPreviousHits, setAiPreviousHits] = useState<Position[]>([]);
+  const [showAISettings, setShowAISettings] = useState(false);
+  const [useAI, setUseAI] = useState(false);
+  const aiInstance = useRef<LMStudioAI | null>(null);
+  const aiHitPositions = useRef<Position[]>([]);
+  const aiSunkShips = useRef<string[]>([]);
+
+  // Initialize AI with default config
+  useEffect(() => {
+    const defaultConfig: AIConfig = {
+      endpoint: 'http://localhost:1234',
+      model: 'local-model',
+      temperature: 0.7,
+      maxTokens: 50
+    };
+    aiInstance.current = new LMStudioAI(defaultConfig);
+  }, []);
 
   // Initialize AI ships
   useEffect(() => {
@@ -138,12 +204,54 @@ function App() {
   // AI turn logic
   useEffect(() => {
     if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai') {
-      const timer = setTimeout(() => {
-        const aiMove = getAIMove(gameState.playerBoard, aiPreviousHits);
-        const { newBoard, newShips, hit } = makeAttack(gameState.playerBoard, gameState.playerShips, aiMove);
+      const timer = setTimeout(async () => {
+        let aiMove: Position;
+        
+        try {
+          if (useAI && aiInstance.current) {
+            // Use LM Studio AI
+            aiMove = await aiInstance.current.makeMove(
+              gameState.playerBoard,
+              aiPreviousHits,
+              aiHitPositions.current,
+              aiSunkShips.current
+            );
+          } else {
+            // Fallback to simple AI
+            aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
+          }
+        } catch (error) {
+          console.error('AI move failed, using fallback:', error);
+          aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
+        }
 
+        const { newBoard, newShips, hit, sunk } = makeAttack(gameState.playerBoard, gameState.playerShips, aiMove);
+
+        // Update AI tracking
         if (hit) {
+          aiHitPositions.current.push(aiMove);
           setAiPreviousHits(prev => [...prev, aiMove]);
+        }
+
+        // Check if a ship was sunk
+        if (sunk) {
+          const sunkShip = newShips.find(ship => 
+            ship.positions.some(pos => pos.row === aiMove.row && pos.col === aiMove.col) &&
+            ship.hits.every(hit => hit)
+          );
+          if (sunkShip && !aiSunkShips.current.includes(sunkShip.name)) {
+            aiSunkShips.current.push(sunkShip.name);
+          }
+        }
+
+        // Record move result for AI learning
+        if (useAI && aiInstance.current) {
+          const sunkShipName = sunk ? newShips.find(ship => 
+            ship.positions.some(pos => pos.row === aiMove.row && pos.col === aiMove.col) &&
+            ship.hits.every(hit => hit)
+          )?.name : undefined;
+          
+          aiInstance.current.recordMoveResult(aiMove, hit, sunk, sunkShipName);
         }
 
         setGameState(prev => ({
@@ -161,14 +269,45 @@ function App() {
             winner: 'ai',
           }));
         }
-      }, 1000); // AI delay for better UX
+      }, 1500); // Slightly longer delay for AI to "think"
 
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, aiPreviousHits]);
+  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, useAI, aiPreviousHits]);
+
+  // AI Configuration handlers
+  const handleAIConfigChange = (config: AIConfig) => {
+    if (aiInstance.current) {
+      aiInstance.current.updateConfig(config);
+    }
+  };
+
+  const handleTestConnection = async (): Promise<boolean> => {
+    try {
+      if (!aiInstance.current) return false;
+      
+      const result = await aiInstance.current.testConnection();
+      console.log('Connection test result:', result);
+      return result.success;
+    } catch {
+      return false;
+    }
+  };
+
+  const toggleAIMode = () => {
+    setUseAI(!useAI);
+  };
 
   const handleResetGame = () => {
     const { board: aiBoard, placedShips: aiShips } = placeShipsRandomly(createInitialShips());
+    
+    // Reset AI state
+    aiHitPositions.current = [];
+    aiSunkShips.current = [];
+    if (aiInstance.current) {
+      aiInstance.current.resetGame();
+    }
+    
     setGameState({
       playerBoard: createEmptyBoard(),
       aiBoard,
@@ -186,6 +325,22 @@ function App() {
     <div className="app">
       <div className="game-header">
         <h1>⚓ Battleship Game ⚓</h1>
+        <div className="ai-controls">
+          <button 
+            className={`ai-toggle ${useAI ? 'active' : ''}`}
+            onClick={toggleAIMode}
+            title={useAI ? 'Using LM Studio AI' : 'Using Simple AI'}
+          >
+            {useAI ? '🤖 LM Studio AI' : '🎯 Simple AI'}
+          </button>
+          <button 
+            className="ai-settings-btn"
+            onClick={() => setShowAISettings(true)}
+            title="Configure AI Settings"
+          >
+            ⚙️ AI Settings
+          </button>
+        </div>
       </div>
       
       <div className="game-container">
@@ -236,6 +391,15 @@ function App() {
           />
         </div>
       </div>
+      
+      {showAISettings && (
+        <AISettings
+          isVisible={showAISettings}
+          onClose={() => setShowAISettings(false)}
+          onConfigChange={handleAIConfigChange}
+          onTestConnection={handleTestConnection}
+        />
+      )}
     </div>
   );
 }

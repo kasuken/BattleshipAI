@@ -4,12 +4,21 @@ A modern, browser-based Battleship game built with TypeScript, React, and Vite. 
 
 ## 🎮 Features
 
-- **Single Player vs AI**: Battle against an intelligent AI opponent
-- **Interactive Ship Placement**: Drag and drop or click to place your ships
-- **Beautiful Modern UI**: Responsive design with smooth animations
+### Core Gameplay
+- **Single Player vs AI**: Battle against intelligent AI opponents with dual AI system
+- **Interactive Ship Placement**: Drag and drop or click to place your ships with rotation
+- **Beautiful Modern UI**: Responsive design with smooth animations and ocean themes
 - **Standard Battleship Rules**: 10x10 grid with ships of sizes 5, 4, 3, 3, and 2
-- **Real-time Game State**: Track hits, misses, and sunk ships
+- **Real-time Game State**: Track hits, misses, and sunk ships with visual feedback
 - **No Page Reloads**: Smooth, single-page application experience
+
+### AI Integration
+- **Dual AI System**: Choose between Simple AI and advanced LM Studio AI
+- **LM Studio Support**: Connect to local LLM models for intelligent, context-aware gameplay
+- **AI Configuration**: Customize endpoint, model parameters, temperature, and token limits
+- **Strategic Decision Making**: Advanced AI with pattern recognition and move history analysis
+- **Graceful Fallback**: Automatic switch to Simple AI if LM Studio is unavailable
+- **Settings Persistence**: AI configuration saved between game sessions
 
 ## 🚢 How to Play
 
@@ -64,6 +73,27 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
+### LM Studio AI Setup (Optional)
+
+For advanced AI gameplay using local LLM models:
+
+1. **Install LM Studio**: Download from [LM Studio](https://lmstudio.ai/)
+
+2. **Load a Model**: Download and load a compatible model (Llama, Mistral, etc.)
+
+3. **Start Local Server**: 
+   - In LM Studio, go to the "Local Server" tab
+   - Start the server (default: http://localhost:1234)
+
+4. **Configure in Game**:
+   - Click the "⚙️ AI Settings" button in the game
+   - Set the endpoint URL (usually http://localhost:1234)
+   - Select your model and adjust parameters
+   - Test the connection
+   - Toggle to "🤖 LM Studio AI" mode
+
+The AI will now use your local LLM for strategic decision-making!
+
 ### Build for Production
 
 ```bash
@@ -74,19 +104,35 @@ The built files will be in the `dist` directory.
 
 ## 🎯 Game Controls
 
-- **Left Click**: Select ship / Place ship / Attack
+### Ship Placement
+- **Left Click**: Select ship / Place ship on board
 - **Right Click**: Rotate ship during placement
-- **Random Placement**: Automatically place all ships
-- **Clear Board**: Remove all placed ships
+- **Random Placement**: Automatically place all ships randomly
+- **Clear Board**: Remove all placed ships to start over
+
+### Gameplay
+- **Left Click**: Attack enemy grid positions
 - **Start Battle**: Begin the game once all ships are placed
 - **Reset Game**: Start a new game at any time
 
+### AI Controls
+- **🎯 Simple AI / 🤖 LM Studio AI**: Toggle between AI modes
+- **⚙️ AI Settings**: Configure LM Studio connection and parameters
+- **Test Connection**: Verify LM Studio server availability
+
 ## 🤖 AI Strategy
 
-The AI opponent uses a combination of:
+### Simple AI
 - Random targeting for initial shots
 - Smart adjacent targeting after hitting a ship
-- Systematic hunting patterns
+- Systematic hunting patterns for ship completion
+
+### LM Studio AI (Advanced)
+- **Context Awareness**: Analyzes board state and move history
+- **Strategic Planning**: Makes decisions based on probability and patterns
+- **Learning Behavior**: Adapts strategy based on successful moves
+- **Natural Language Processing**: Uses LLM reasoning for tactical decisions
+- **Dynamic Difficulty**: Adjusts based on configured temperature settings
 
 ## 📱 Responsive Design
 
