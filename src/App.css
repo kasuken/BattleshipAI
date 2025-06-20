@@ -91,25 +91,76 @@
 
 .game-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   justify-content: center;
-  gap: 20px;
-  max-width: 1400px;
+  gap: 30px;
+  max-width: 1800px;
   margin: 0 auto;
+  padding: 0 20px;
 }
 
-.game-boards {
+/* New layout with status in the middle */
+.game-main-area {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start; /* Align items at the top */
+  gap: 15px;
+  width: 100%;
+}
+
+/* Keep for compatibility */
+.board-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+}
+
+.board-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 20px;
+  padding-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  width: 100%; /* Take full width of parent */
+  min-width: 0; /* Prevents flex item from overflowing */
+}
+
+.board-wrapper h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: white;
+  font-size: 1.6rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.board-wrapper.player-board h2 {
+  color: #3498db;
+}
+
+.board-wrapper.enemy-board h2 {
+  color: #e74c3c;
 }
 
 .game-sidebar {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  min-width: 350px;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 /* Auto-restart countdown styles */
@@ -161,11 +212,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 10px auto 20px;
-  padding: 10px 20px;
+  margin: 0 auto 25px;
+  padding: 10px 30px;
   background: rgba(0, 0, 0, 0.5);
   border-radius: 30px;
-  max-width: 500px;
+  max-width: 600px;
+  width: 100%;
   border: 2px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -220,13 +272,13 @@
 
 /* Game Log Styles - Enhanced */
 .game-log-container {
-  margin-top: 20px;
+  margin-top: 30px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 10px 10px 0 0;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 800px;
-  margin: 20px auto 0;
+  max-width: 1800px;
+  margin: 10px auto 0;
   position: relative;
 }
 
@@ -264,11 +316,12 @@
 }
 
 .game-log-entries {
-  max-height: 250px;
+  max-height: 200px; /* Increased height for single column */
   overflow-y: auto;
   padding: 10px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.2);
+  /* Removed columns property for single column layout */
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -286,14 +339,24 @@
 }
 
 .game-log-entry {
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  line-height: 1.4;
-  font-size: 0.9rem;
+  padding: 8px 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.5;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
 }
 
 .game-log-entry:last-child {
   border-bottom: none;
+}
+
+.game-log-entry:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.game-log-entry:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .game-log-empty {
@@ -341,6 +404,41 @@
   to {
     text-shadow: 0 0 15px rgba(231, 76, 60, 1), 0 0 20px rgba(231, 76, 60, 0.7);
   }
+}
+
+/* Game info center styles */
+.game-info-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0.6; /* Take less space than the board columns */
+  padding: 0;
+  position: relative;
+  max-width: 350px; /* Limit width */
+}
+
+/* Enhance log entries for single column */
+.game-log-entry[data-type="hit"]::before {
+  content: "🔥";
+  margin-right: 8px;
+}
+
+.game-log-entry[data-type="miss"]::before {
+  content: "💦";
+  margin-right: 8px;
+}
+
+.game-log-entry[data-type="sunk"]::before {
+  content: "💥";
+  margin-right: 8px;
+}
+
+/* Better timestamp display */
+.log-timestamp {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  margin-right: 8px;
+  font-family: monospace;
 }
 
 /* Responsive Design */

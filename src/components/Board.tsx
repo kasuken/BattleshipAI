@@ -96,9 +96,6 @@ const Board: React.FC<BoardProps> = ({
 
   return (
     <div className={`board ${isPlayer ? 'player-board' : 'ai-board'}`}>
-      <div className="board-title">
-        {isPlayer ? 'Your Fleet' : 'Enemy Waters'}
-      </div>
       <div className="board-grid">
         {/* Column headers */}
         <div className="board-header">

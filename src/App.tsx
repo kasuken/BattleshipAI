@@ -10,6 +10,7 @@ import {
 import { LMStudioAI, type AIConfig } from './aiService';
 import Board from './components/Board';
 import GameStatus from './components/GameStatus';
+import FleetStatus from './components/FleetStatus';
 import AISettings from './components/AISettings';
 import './App.css';
 
@@ -603,52 +604,76 @@ function App() {
             📜 Game Log
           </button>
         </div>
-      </div>
-
-      <div className="game-container">
-        <div className="board-container">
-          <div className="board-wrapper player-board">
-            <h2>🔵 Blue AI Fleet</h2>
-            <Board 
-              board={gameState.playerBoard}
-              ships={gameState.playerShips}
-              isPlayer={true}
-              showShips={true}
-              onCellClick={() => {}} // No manual interactions in AI vs AI mode
-              gamePhase={gameState.gamePhase}
-            />
-          </div>
-          <div className="board-wrapper enemy-board">
-            <h2>🔴 Red AI Fleet</h2>
-            <Board 
-              board={gameState.aiBoard}
-              ships={gameState.aiShips}
-              isPlayer={false}
-              showShips={true} 
-              onCellClick={() => {}} // No manual interactions in AI vs AI mode
-              gamePhase={gameState.gamePhase}
-            />
-          </div>
-        </div>
-
-        <div className="game-sidebar">          <GameStatus 
-            gamePhase={gameState.gamePhase}
-            currentTurn={gameState.currentTurn}
-            winner={gameState.winner}
-            playerShips={gameState.playerShips}
-            aiShips={gameState.aiShips}
-            onStartGame={handleStartGame}            onResetGame={handleResetGame}
-          />
-          {gameState.gamePhase === 'gameOver' && autoRestartCountdown !== null && (
-            <div className="auto-restart-countdown">
-              <p>🔄 New game starting in {autoRestartCountdown} seconds...</p>
-              <button onClick={() => setAutoRestartCountdown(null)}>
-                Cancel Auto-Restart
-              </button>
+      </div>      <div className="game-container">
+        {/* Main game area with boards and game status in the middle */}
+        <div className="game-main-area">
+          {/* Left board with fleet status */}
+          <div className="board-column">
+            <div className="board-wrapper player-board">
+              <h2>🔵 Blue AI Fleet</h2>
+              <Board 
+                board={gameState.playerBoard}
+                ships={gameState.playerShips}
+                isPlayer={true}
+                showShips={true}
+                onCellClick={() => {}} // No manual interactions in AI vs AI mode
+                gamePhase={gameState.gamePhase}
+              />
             </div>
-          )}
+            {gameState.gamePhase !== 'setup' && (
+              <FleetStatus 
+                ships={gameState.playerShips}
+                title="🔵 Blue AI Fleet Status"
+                hideDetails={false}
+              />
+            )}
+          </div>
+
+          {/* Game status in the middle */}
+          <div className="game-info-center">
+            <GameStatus 
+              gamePhase={gameState.gamePhase}
+              currentTurn={gameState.currentTurn}
+              winner={gameState.winner}
+              playerShips={gameState.playerShips}
+              aiShips={gameState.aiShips}
+              onStartGame={handleStartGame}
+              onResetGame={handleResetGame}
+            />
+          </div>
+
+          {/* Right board with fleet status */}
+          <div className="board-column">
+            <div className="board-wrapper enemy-board">
+              <h2>🔴 Red AI Fleet</h2>
+              <Board 
+                board={gameState.aiBoard}
+                ships={gameState.aiShips}
+                isPlayer={false}
+                showShips={true} 
+                onCellClick={() => {}} // No manual interactions in AI vs AI mode
+                gamePhase={gameState.gamePhase}
+              />
+            </div>            {gameState.gamePhase !== 'setup' && (
+              <FleetStatus 
+                ships={gameState.aiShips}
+                title="🔴 Red AI Fleet Status"
+                hideDetails={false} 
+              />
+            )}
+          </div>
         </div>
-      </div>      {showAISettings && (
+        {gameState.gamePhase === 'gameOver' && autoRestartCountdown !== null && (
+          <div className="auto-restart-countdown">
+            <p>🔄 New game starting in {autoRestartCountdown} seconds...</p>
+            <button onClick={() => setAutoRestartCountdown(null)}>
+              Cancel Auto-Restart
+            </button>
+          </div>
+        )}
+      </div>
+      
+      {showAISettings && (
         <AISettings 
           isVisible={showAISettings}
           onClose={() => setShowAISettings(false)}

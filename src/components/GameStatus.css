@@ -7,22 +7,39 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   margin: 20px;
-  min-width: 350px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: visible;
 }
 
 .status-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  width: 100%;
+  font-size: 0.9em; /* Smaller font size for the header */
 }
 
 .status-header h2 {
   margin: 0 0 15px 0;
-  font-size: 2rem;
+  font-size: 1.8rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   background: linear-gradient(45deg, #fff, #e0e7ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.setup-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin-bottom: 20px;
 }
 
 .setup-status p {
@@ -51,14 +68,16 @@
 
 .playing-status {
   text-align: center;
+  padding: 5px;
+  max-width: 100%;
 }
 
 .turn-indicator {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
-  padding: 15px;
+  padding: 10px;
   border-radius: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   transition: all 0.3s ease;
 }
 
@@ -89,16 +108,19 @@
 .battle-stats {
   display: flex;
   justify-content: space-around;
+  gap: 40px;
   background-color: rgba(255, 255, 255, 0.1);
-  padding: 15px;
-  border-radius: 8px;
+  padding: 15px 30px;
+  border-radius: 10px;
+  margin: 20px 0;
 }
 
 .stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-size: 1.1em;
 }
 
 .stat-label {
@@ -112,7 +134,12 @@
 }
 
 .game-over-status {
-  text-align: center;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
 }
 
 .winner-announcement {
@@ -159,17 +186,28 @@
 }
 
 .fleet-status {
-  margin-top: 20px;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 15px;
+  flex: 1; /* Take remaining vertical space */
 }
 
 .ship-status-section {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 10px;
 }
 
 .ship-status-section h4 {
-  margin: 0 0 10px 0;
-  font-size: 1.2rem;
+  margin: 0 0 8px 0;
+  font-size: 1rem;
   text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .enemy-fleet-note {
@@ -195,9 +233,11 @@
   align-items: center;
   justify-content: space-between;
   background-color: rgba(255, 255, 255, 0.1);
-  padding: 10px;
-  border-radius: 6px;
+  border-radius: 8px;
+  padding: 10px 15px;
   transition: all 0.2s ease;
+  font-size: 1em;
+  margin-bottom: 8px;
 }
 
 .ship-status.intact {
@@ -222,9 +262,10 @@
 
 .ship-health {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
   justify-content: center;
+  margin: 0 10px;
 }
 
 .ship-health-hidden {
@@ -246,10 +287,10 @@
 }
 
 .health-cell {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .health-cell.intact {
@@ -267,23 +308,28 @@
 }
 
 .game-controls {
-  margin-top: 20px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  width: 100%;
 }
 
 .control-button {
-  background-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 10px 20px;
+  padding: 12px 25px;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
+  font-weight: bold;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
 }
 
 .control-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
 

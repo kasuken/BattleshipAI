@@ -1,0 +1,101 @@
+/* FleetStatus Component Styles */
+
+.fleet-status {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  margin-top: 10px;
+}
+
+.fleet-title {
+  margin: 0 0 15px 0;
+  font-size: 1.3rem;
+  text-align: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ship-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ship-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  font-size: 0.9em;
+}
+
+.ship-status.intact {
+  border-left: 4px solid #10b981;
+}
+
+.ship-status.damaged {
+  border-left: 4px solid #f59e0b;
+}
+
+.ship-status.sunk {
+  border-left: 4px solid #ef4444;
+  opacity: 0.7;
+}
+
+.ship-name {
+  font-weight: bold;
+  color: white;
+  min-width: 80px;
+}
+
+.ship-health {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+  justify-content: center;
+  margin: 0 10px;
+}
+
+.ship-health-hidden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hit-count {
+  font-size: 0.9em;
+  color: #f59e0b;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.health-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.health-cell.intact {
+  background-color: #10b981;
+}
+
+.health-cell.hit {
+  background-color: #ef4444;
+}
+
+.ship-status-text {
+  font-size: 1.2rem;
+  margin-left: 10px;
+}
