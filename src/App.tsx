@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { GameState, Position, Cell } from './types';
 import { 
   createEmptyBoard, 
@@ -76,11 +76,30 @@ function App() {
   
   // AI states
   const [aiPreviousHits, setAiPreviousHits] = useState<Position[]>([]);
-  const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);  const [showAISettings, setShowAISettings] = useState(false);
-  const [aiMoveInProgress, setAiMoveInProgress] = useState(false);  const [playerAiMoveInProgress, setPlayerAiMoveInProgress] = useState(false);
+  const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);
+  const [showAISettings, setShowAISettings] = useState(false);
+  const [aiMoveInProgress, setAiMoveInProgress] = useState(false);
+  const [playerAiMoveInProgress, setPlayerAiMoveInProgress] = useState(false);
   const [autoRestartCountdown, setAutoRestartCountdown] = useState<number | null>(null);
   const [blueAIWins, setBlueAIWins] = useState(0);
   const [redAIWins, setRedAIWins] = useState(0);
+  const [gameLogs, setGameLogs] = useState<string[]>([]);
+  const [showGameLogs, setShowGameLogs] = useState(false);
+  
+  // Function to add entries to the game log (at the beginning to avoid reference issues)
+  const addGameLog = useCallback((message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `[${timestamp}] ${message}`;
+    setGameLogs(prev => [...prev, logEntry]);
+    
+    // Scroll log to bottom after update (delayed to ensure DOM has updated)
+    setTimeout(() => {
+      const logContainer = document.getElementById('game-log-entries');
+      if (logContainer) {
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+    }, 50);
+  }, []);
   
   // AI refs
   const aiInstance = useRef<LMStudioAI | null>(null);
@@ -117,7 +136,6 @@ function App() {
       playerShips
     }));
   }, []);
-
   const handleStartGame = () => {
     // Start the AI vs AI game
     setGameState(prev => ({
@@ -125,6 +143,9 @@ function App() {
       gamePhase: 'playing',
       currentTurn: 'player',
     }));
+    
+    // Log game start
+    addGameLog('⚓ New game started! Blue AI goes first.');
   };
 
   // Red AI turn logic
@@ -202,14 +223,20 @@ function App() {
         } catch (error) {
           console.error('Red AI move completely failed, using emergency fallback:', error);
           aiMove = getSimpleAIMove(gameState.playerBoard, aiPreviousHits);
-        }
+        }        const { newBoard, newShips, hit, sunk } = makeAttack(gameState.playerBoard, gameState.playerShips, aiMove);
 
-        const { newBoard, newShips, hit, sunk } = makeAttack(gameState.playerBoard, gameState.playerShips, aiMove);
-
+        // Add log entry for the move
+        const col = String.fromCharCode(65 + aiMove.col);
+        const row = aiMove.row + 1;
+        const moveCoord = `${col}${row}`;
+        
         // Update AI tracking
         if (hit) {
           aiHitPositions.current.push(aiMove);
           setAiPreviousHits(prev => [...prev, aiMove]);
+          addGameLog(`🔴 Red AI fired at ${moveCoord} - HIT! 🔥`);
+        } else {
+          addGameLog(`🔴 Red AI fired at ${moveCoord} - Miss 💦`);
         }
 
         // Check if a ship was sunk
@@ -220,6 +247,7 @@ function App() {
           );
           if (sunkShip && !aiSunkShips.current.includes(sunkShip.name)) {
             aiSunkShips.current.push(sunkShip.name);
+            addGameLog(`🔴 Red AI sunk Blue AI's ${sunkShip.name}! 💥`);
           }
         }
 
@@ -244,6 +272,9 @@ function App() {
           setRedAIWins(prevWins => prevWins + 1);
           console.log('🔴 Red AI won a game!');
           
+          // Log game over
+          addGameLog('🏆 Game over! Red AI wins the battle!');
+          
           setGameState(prev => ({
             ...prev,
             gamePhase: 'gameOver',
@@ -256,7 +287,7 @@ function App() {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, aiPreviousHits, aiMoveInProgress]);
+  }, [gameState.currentTurn, gameState.gamePhase, gameState.playerBoard, gameState.playerShips, aiPreviousHits, aiMoveInProgress, addGameLog]);
 
   // Blue AI turn logic
   useEffect(() => {
@@ -333,14 +364,20 @@ function App() {
         } catch (error) {
           console.error('Blue AI move completely failed, using emergency fallback:', error);
           playerAiMove = getSimpleAIMove(gameState.aiBoard, playerAiPreviousHits);
-        }
+        }        const { newBoard, newShips, hit, sunk } = makeAttack(gameState.aiBoard, gameState.aiShips, playerAiMove);
 
-        const { newBoard, newShips, hit, sunk } = makeAttack(gameState.aiBoard, gameState.aiShips, playerAiMove);
-
+        // Add log entry for the move
+        const col = String.fromCharCode(65 + playerAiMove.col);
+        const row = playerAiMove.row + 1;
+        const moveCoord = `${col}${row}`;
+        
         // Update Player AI tracking
         if (hit) {
           playerAiHitPositions.current.push(playerAiMove);
           setPlayerAiPreviousHits(prev => [...prev, playerAiMove]);
+          addGameLog(`🔵 Blue AI fired at ${moveCoord} - HIT! 🔥`);
+        } else {
+          addGameLog(`🔵 Blue AI fired at ${moveCoord} - Miss 💦`);
         }
 
         // Check if Player AI sunk a ship
@@ -351,6 +388,7 @@ function App() {
           );
           if (sunkShip && !playerAiSunkShips.current.includes(sunkShip.name)) {
             playerAiSunkShips.current.push(sunkShip.name);
+            addGameLog(`🔵 Blue AI sunk Red AI's ${sunkShip.name}! 💥`);
           }
         }
 
@@ -375,6 +413,9 @@ function App() {
           setBlueAIWins(prevWins => prevWins + 1);
           console.log('🔵 Blue AI won a game!');
           
+          // Log game over
+          addGameLog('🏆 Game over! Blue AI wins the battle!');
+          
           setGameState(prev => ({
             ...prev, 
             gamePhase: 'gameOver',
@@ -387,7 +428,7 @@ function App() {
       
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentTurn, gameState.gamePhase, gameState.aiBoard, gameState.aiShips, playerAiPreviousHits, playerAiMoveInProgress]);
+  }, [gameState.currentTurn, gameState.gamePhase, gameState.aiBoard, gameState.aiShips, playerAiPreviousHits, playerAiMoveInProgress, addGameLog]);
 
   // AI Configuration handlers
   const handleAIConfigChange = (config: AIConfig) => {
@@ -409,10 +450,12 @@ function App() {
     } catch {
       return false;
     }
-  };
-  const handleResetGame = () => {
+  };  const handleResetGame = useCallback(() => {
     const { board: aiBoard, placedShips: aiShips } = placeShipsRandomly(createInitialShips());
     const { board: playerBoard, placedShips: playerShips } = placeShipsRandomly(createInitialShips());
+    
+    // Log game reset
+    addGameLog('🔄 Game reset! Ships randomly placed for both AIs.');
     
     // Reset AI state
     aiHitPositions.current = [];
@@ -445,16 +488,14 @@ function App() {
       console.log('🎮 Auto-starting new game!');
       setGameState(prev => ({
         ...prev,
-        gamePhase: 'playing',
-      }));
-    }, 500);
-  };
+        gamePhase: 'playing',      }));    }, 500);
+  }, [addGameLog]);
 
   // Auto-restart effect
-  useEffect(() => {
-    // Start countdown when game is over
+  useEffect(() => {    // Start countdown when game is over
     if (gameState.gamePhase === 'gameOver' && autoRestartCountdown === null) {
       console.log('🔄 Game over! Starting auto-restart countdown: 20 seconds');
+      addGameLog('⏱️ Auto-restart countdown started (20 seconds)');
       setAutoRestartCountdown(20);
     }
     
@@ -462,7 +503,15 @@ function App() {
     if (autoRestartCountdown !== null && autoRestartCountdown > 0) {
       const timer = setTimeout(() => {
         setAutoRestartCountdown(prev => prev !== null ? prev - 1 : null);
-        console.log(`⏱️ Auto-restart in ${autoRestartCountdown - 1} seconds...`);
+        
+        // Log only at certain intervals to avoid too many messages
+        if (autoRestartCountdown === 15 || autoRestartCountdown === 10 || 
+            autoRestartCountdown === 5 || autoRestartCountdown <= 3) {
+          console.log(`⏱️ Auto-restart in ${autoRestartCountdown - 1} seconds...`);
+          if (autoRestartCountdown === 5) {
+            addGameLog(`⏱️ Auto-restart in 5 seconds...`);
+          }
+        }
       }, 1000);
       
       return () => clearTimeout(timer);
@@ -471,10 +520,11 @@ function App() {
     // Auto-restart the game when countdown reaches zero
     if (autoRestartCountdown === 0) {
       console.log('🎮 Auto-restarting new game!');
+      addGameLog('🎮 Auto-restarting new game!');
       handleResetGame();
       setAutoRestartCountdown(null);
     }
-  }, [gameState.gamePhase, autoRestartCountdown]);
+  }, [gameState.gamePhase, autoRestartCountdown, handleResetGame, addGameLog]);
 
   // Load win counts from local storage
   useEffect(() => {
@@ -487,8 +537,8 @@ function App() {
     
     if (savedRedWins) {
       setRedAIWins(parseInt(savedRedWins, 10));
-    }
-  }, []);
+    }  }, []);
+  // The addGameLog function is now defined at the beginning of the component
 
   // Save win counts to local storage whenever they change
   useEffect(() => {
@@ -520,8 +570,7 @@ function App() {
             <span className="win-counter-text">wins</span>
           </div>
         </div>
-          <div className="ai-controls">
-          <button 
+          <div className="ai-controls">          <button 
             className="ai-settings-btn"
             onClick={() => setShowAISettings(true)}
             title="Configure AI Settings"
@@ -539,6 +588,13 @@ function App() {
             title="Reset Win Statistics"
           >
             🔄 Reset Stats
+          </button>
+          <button 
+            className={`toggle-log-btn ${showGameLogs ? 'active' : ''}`}
+            onClick={() => setShowGameLogs(!showGameLogs)}
+            title="Toggle Game Log"
+          >
+            📜 Game Log
           </button>
         </div>
       </div>
@@ -586,9 +642,7 @@ function App() {
             </div>
           )}
         </div>
-      </div>
-
-      {showAISettings && (
+      </div>      {showAISettings && (
         <AISettings 
           isVisible={showAISettings}
           onClose={() => setShowAISettings(false)}
@@ -596,6 +650,43 @@ function App() {
           onTestConnection={handleTestConnection}
         />
       )}
+        {/* Game Log Panel */}
+      <div className="game-log-container">
+        <div className="game-log-header" onClick={() => setShowGameLogs(!showGameLogs)}>
+          <span>📜 Game Log {gameLogs.length > 0 && `(${gameLogs.length})`}</span>
+          <button>{showGameLogs ? '▼ Hide' : '▲ Show'}</button>
+        </div>
+        
+        {showGameLogs && (
+          <div className="game-log-content">
+            {gameLogs.length === 0 ? (
+              <div className="game-log-empty">No game events yet. Start a game to see the action!</div>
+            ) : (
+              <>
+                <div className="game-log-entries" id="game-log-entries">
+                  {gameLogs.map((log, index) => (
+                    <div key={index} className="game-log-entry">
+                      {log}
+                    </div>
+                  ))}
+                </div>
+                <div className="game-log-controls">
+                  <button 
+                    className="clear-log-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setGameLogs([]);
+                      addGameLog('Log cleared');
+                    }}
+                  >
+                    🗑️ Clear Log
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

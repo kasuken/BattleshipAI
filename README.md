@@ -1,44 +1,41 @@
-# ⚓ Battleship Game
+# ⚓ Battleship Game - AI vs AI Edition
 
-A modern, browser-based Battleship game built with TypeScript, React, and Vite. Play against an AI opponent in this classic naval strategy game!
+A modern, browser-based Battleship game built with TypeScript, React, and Vite that showcases AI vs AI battles using local LLM models.
 
 ## 🎮 Features
 
-### Core Gameplay
-- **Single Player vs AI**: Battle against intelligent AI opponents with dual AI system
-- **Interactive Ship Placement**: Drag and drop or click to place your ships with rotation
+### AI vs AI Mode
+- **Automated Battles**: Watch two AI opponents battle it out automatically
+- **Win Counter**: Track and display total wins for Blue AI and Red AI
+- **Auto-Restart**: Games automatically restart 20 seconds after completion
+- **Game Log**: Detailed timestamped log of all game events and moves
 - **Beautiful Modern UI**: Responsive design with smooth animations and ocean themes
 - **Standard Battleship Rules**: 10x10 grid with ships of sizes 5, 4, 3, 3, and 2
-- **Real-time Game State**: Track hits, misses, and sunk ships with visual feedback
-- **No Page Reloads**: Smooth, single-page application experience
 
-### AI Integration
-- **Dual AI System**: Choose between Simple AI and advanced LM Studio AI
+### Advanced AI Integration
 - **LM Studio Support**: Connect to local LLM models for intelligent, context-aware gameplay
+- **Robust Retry Mechanism**: Up to 3 attempts with progressively simpler context
 - **AI Configuration**: Customize endpoint, model parameters, temperature, and token limits
 - **Strategic Decision Making**: Advanced AI with pattern recognition and move history analysis
 - **Graceful Fallback**: Automatic switch to Simple AI if LM Studio is unavailable
-- **Settings Persistence**: AI configuration saved between game sessions
+- **Enhanced Error Handling**: Detailed error logging and recovery strategies
 
-## 🚢 How to Play
+## 🚢 How It Works
 
-1. **Setup Phase**: Place your 5 ships on your board
-   - Carrier (5 cells)
-   - Battleship (4 cells)
-   - Cruiser (3 cells)
-   - Submarine (3 cells)
-   - Destroyer (2 cells)
+1. **Game Setup**: 
+   - Ships are randomly placed for both AI players
+   - Blue AI (Player 1) and Red AI (Player 2) alternate turns
 
-2. **Placement Options**:
-   - Click a ship to select it, then click on the board to place
-   - Right-click or use the rotate button to change orientation
-   - Use "Random Placement" for quick setup
-   - Ships cannot touch each other
+2. **AI Decision Making**:
+   - Each AI analyzes the current board state
+   - LM Studio processes the context and returns optimal moves
+   - Moves are validated and executed automatically
 
-3. **Battle Phase**: Take turns attacking the enemy grid
-   - Click on enemy waters to fire
-   - 💥 = Hit, 💨 = Miss
-   - Sink all enemy ships to win!
+3. **Game Progression**:
+   - Watch as ships are attacked and sunk
+   - Game log records all moves and events
+   - Win counter tracks performance of each AI
+   - Games auto-restart after completion
 
 ## 🛠 Technologies Used
 
@@ -73,26 +70,35 @@ npm run dev
 
 4. Open your browser and navigate to `http://localhost:5173`
 
-### LM Studio AI Setup (Optional)
+### LM Studio AI Setup (Required)
 
-For advanced AI gameplay using local LLM models:
+This AI vs AI game requires LM Studio to function properly:
 
 1. **Install LM Studio**: Download from [LM Studio](https://lmstudio.ai/)
 
 2. **Load a Model**: Download and load a compatible model (Llama, Mistral, etc.)
+   - Recommended: models with at least 7B parameters for best performance
+   - Good options: Llama-2, Mistral-7B, or any model with strategic capabilities
 
 3. **Start Local Server**: 
-   - In LM Studio, go to the "Local Server" tab
-   - Start the server (default: http://localhost:1234)
+   - In LM Studio, go to the "API" tab
+   - Toggle the API server to "On"
+   - Default server is http://localhost:1234
 
 4. **Configure in Game**:
-   - Click the "⚙️ AI Settings" button in the game
-   - Set the endpoint URL (usually http://localhost:1234)
-   - Select your model and adjust parameters
-   - Test the connection
-   - Toggle to "🤖 LM Studio AI" mode
+   - Click the gear icon (⚙️) in the top right of the game
+   - Verify the endpoint URL (usually http://localhost:1234)
+   - Adjust temperature (lower = more focused moves)
+   - Set max tokens (30-50 recommended)
+   - Click "Save"
 
-The AI will now use your local LLM for strategic decision-making!
+### Game Features
+
+- **Win Counter**: Track Blue AI vs Red AI performance over multiple games
+- **Auto-Restart**: Games automatically restart after 20-second countdown
+- **Game Log**: Toggle to view detailed history of moves and events
+- **Reset Stats**: Clear win counters and start fresh
+- **Robust AI**: Multiple retry attempts if AI makes invalid moves
 
 ### Build for Production
 

@@ -73,3 +73,36 @@ This feature is particularly useful for:
 - Running long-term AI simulation experiments
 - Observing how different LM Studio models perform over multiple games
 - Creating a "spectator mode" demonstration of AI vs AI gameplay
+
+## Win Counter
+
+The game includes a persistent win tracking system:
+
+- Win counts for both Blue AI and Red AI are displayed at the top of the screen
+- Counters are automatically updated when a game ends
+- Win statistics persist between browser sessions (stored in localStorage)
+- The "Reset Stats" button allows you to clear the win counts and start fresh
+- Use these statistics to evaluate the performance of different LM models
+
+## Game Log Feature
+
+A comprehensive game log system is integrated into the AI vs AI mode:
+
+- Click the "Game Log" panel at the bottom of the screen to expand/collapse it
+- All game events are automatically recorded with timestamps
+- Events include:
+  - Game starts and resets
+  - AI moves (hits and misses)
+  - Ships sunk
+  - Game outcomes
+  - Auto-restart events
+  - Stat resets
+- The log automatically scrolls to show the latest events
+- A "Clear Log" button allows you to reset the log when needed
+- The log persists during the entire session, even across multiple games
+
+This feature helps you:
+- Track the history of AI decisions and their outcomes
+- Analyze patterns in AI strategy over time
+- Debug issues with AI behavior or the game itself
+- Create a record of interesting game moments
