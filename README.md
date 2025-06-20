@@ -1,6 +1,6 @@
 # ⚓ Battleship Game - AI vs AI Edition
 
-A modern, browser-based Battleship game built with TypeScript, React, and Vite that showcases AI vs AI battles using local LLM models.
+A modern, browser-based Battleship game built with TypeScript, React, and Vite that showcases AI vs AI battles using local LLM models. This specialized version focuses exclusively on AI vs AI combat, with two LM Studio-powered AIs (Blue and Red) competing against each other in a fully automated naval battle.
 
 ## 🎮 Features
 
@@ -100,6 +100,26 @@ This AI vs AI game requires LM Studio to function properly:
 - **Reset Stats**: Clear win counters and start fresh
 - **Robust AI**: Multiple retry attempts if AI makes invalid moves
 
+### Troubleshooting
+
+If you encounter issues with the AI:
+
+1. **LM Studio Connection Issues**:
+   - Ensure LM Studio is running with the API server enabled
+   - Check that the endpoint URL is correct (usually http://localhost:1234)
+   - Verify your model is loaded and ready in LM Studio
+
+2. **AI Move Problems**:
+   - Try using a different model with better reasoning capabilities
+   - Lower the temperature setting (0.3-0.5 often works better)
+   - Increase max tokens if responses are getting cut off
+   - Monitor the game log for error patterns
+
+3. **Performance Issues**:
+   - Close other CPU-intensive applications
+   - Reduce animation effects in your browser
+   - Try a different browser if you experience lag
+
 ### Build for Production
 
 ```bash
@@ -110,40 +130,46 @@ The built files will be in the `dist` directory.
 
 ## 🎯 Game Controls
 
-### Ship Placement
-- **Left Click**: Select ship / Place ship on board
-- **Right Click**: Rotate ship during placement
-- **Random Placement**: Automatically place all ships randomly
-- **Clear Board**: Remove all placed ships to start over
-
-### Gameplay
-- **Left Click**: Attack enemy grid positions
-- **Start Battle**: Begin the game once all ships are placed
+### Main Controls
+- **Start AI Battle**: Begin a new AI vs AI game
 - **Reset Game**: Start a new game at any time
+- **Show/Hide Game Log**: Toggle visibility of the game event log
+- **Clear Log**: Erase all log entries
+- **Reset Stats**: Clear win counters for both AIs
 
-### AI Controls
-- **🎯 Simple AI / 🤖 LM Studio AI**: Toggle between AI modes
-- **⚙️ AI Settings**: Configure LM Studio connection and parameters
-- **Test Connection**: Verify LM Studio server availability
+### Auto-Restart
+- **Cancel Auto-Restart**: Stop the 20-second countdown to the next game
+- Auto-restart begins automatically when a game ends
+
+### AI Settings
+- **⚙️ Settings**: Configure LM Studio connection and parameters
+  - Endpoint URL
+  - Model name
+  - Temperature (randomness of responses)
+  - Max tokens (maximum response length)
 
 ## 🤖 AI Strategy
 
-### Simple AI
+### Blue AI & Red AI (LM Studio-powered)
+- **Context Awareness**: Analyzes board state and move history
+- **Strategic Planning**: Makes decisions based on probability and patterns
+- **Natural Language Processing**: Uses LLM reasoning for tactical decisions
+- **Dynamic Difficulty**: Adjusts based on configured temperature settings
+- **Robust Retry System**:
+  - First attempt: Full context (board, hits, misses, sunk ships)
+  - Second attempt: Simplified context (board and hits only)
+  - Third attempt: Minimal context (just the board)
+  - Final fallback: Simple adjacent targeting algorithm
+
+### Fallback AI (Used only if LM Studio fails)
 - Random targeting for initial shots
 - Smart adjacent targeting after hitting a ship
 - Systematic hunting patterns for ship completion
 
-### LM Studio AI (Advanced)
-- **Context Awareness**: Analyzes board state and move history
-- **Strategic Planning**: Makes decisions based on probability and patterns
-- **Learning Behavior**: Adapts strategy based on successful moves
-- **Natural Language Processing**: Uses LLM reasoning for tactical decisions
-- **Dynamic Difficulty**: Adjusts based on configured temperature settings
-
 ## 📱 Responsive Design
 
 The game is fully responsive and works on:
-- Desktop computers
+- Desktop computers (optimal viewing experience)
 - Tablets
 - Mobile phones
 
@@ -152,7 +178,9 @@ The game is fully responsive and works on:
 - Gradient backgrounds with ocean themes
 - Smooth hover effects and animations
 - Visual feedback for game states
-- Intuitive ship placement with preview
+- Win counter with persistent statistics
+- Auto-scrolling game log with timestamps
+- Auto-restart countdown animation
 - Real-time fleet status tracking
 
 ## 🔧 Development
@@ -171,10 +199,11 @@ src/
 ├── components/          # React components
 │   ├── Board.tsx       # Game board component
 │   ├── Board.css       # Board styling
-│   ├── ShipSelector.tsx# Ship placement UI
-│   ├── ShipSelector.css
+│   ├── AISettings.tsx  # LM Studio AI configuration
+│   ├── AISettings.css
 │   ├── GameStatus.tsx  # Game state display
 │   └── GameStatus.css
+├── aiService.ts        # LM Studio AI integration
 ├── types.ts            # TypeScript type definitions
 ├── utils.ts            # Game logic utilities
 ├── App.tsx             # Main application component
@@ -183,6 +212,32 @@ src/
 └── main.tsx            # Application entry point
 ```
 
+## 🔎 Game Log System
+
+The game includes a comprehensive logging system that tracks all game events:
+
+- **Timestamped Entries**: All log entries include time for analysis
+- **Event Categories**:
+  - Game starts and resets
+  - AI moves (coordinates, hits, and misses)
+  - Ships sunk (with ship types)
+  - Game outcomes (winner)
+  - Auto-restart events
+  - Settings changes
+- **Persistent Display**: Log remains visible across games
+- **Expandable Interface**: Show/hide with a single click
+- **Auto-scrolling**: Always shows most recent events
+- **Clear Function**: Reset log as needed
+
+## 📊 Win Statistics
+
+The game tracks AI performance over time:
+
+- **Persistent Counters**: Win counts for Blue AI and Red AI
+- **Local Storage**: Statistics preserved between sessions
+- **Reset Option**: Clear statistics when desired
+- **Visual Indicators**: Winning AI gets highlighted
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -190,6 +245,12 @@ src/
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
+
+## 📋 Additional Documentation
+
+For more detailed information about the AI vs AI mode, please see:
+- `AI_VS_AI_INSTRUCTIONS.md` - Complete guide to the AI battle system
+- `GAME_FEATURES.md` - Detailed breakdown of all game features
 
 ## 📄 License
 
