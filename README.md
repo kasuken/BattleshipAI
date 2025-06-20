@@ -54,8 +54,8 @@ A browser-based Battleship game built with TypeScript, React, and Vite that show
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd battleship
+git clone https://github.com/kasuken/BattleshipAI
+cd BattleshipAI
 ```
 
 2. Install dependencies:
