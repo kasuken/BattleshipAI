@@ -23,10 +23,44 @@ const Board: React.FC<BoardProps> = ({
   onShipPlace,
   gamePhase
 }) => {
+  // Add state to track recently hit/missed cells for animations
+  const [recentHit, setRecentHit] = React.useState<Position | null>(null);
+  const [recentMiss, setRecentMiss] = React.useState<Position | null>(null);
+  const [targetingCells, setTargetingCells] = React.useState<Position[]>([]);
+
+  // Clear animation states after they play
+  React.useEffect(() => {
+    if (recentHit) {
+      const timer = setTimeout(() => {
+        setRecentHit(null);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [recentHit]);
+
+  React.useEffect(() => {
+    if (recentMiss) {
+      const timer = setTimeout(() => {
+        setRecentMiss(null);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [recentMiss]);
+
+  // Handle cell click with animation
   const handleCellClick = (position: Position) => {
     if (gamePhase === 'setup' && isPlayer && selectedShip && onShipPlace) {
       onShipPlace(position, selectedShip.isHorizontal);
     } else if (gamePhase === 'playing') {
+      // Set animation before actual attack
+      const cell = board[position.row][position.col];
+      if (!cell.isHit && !cell.isMiss) {
+        if (cell.hasShip) {
+          setRecentHit(position);
+        } else {
+          setRecentMiss(position);
+        }
+      }
       onCellClick(position);
     }
   };
@@ -39,7 +73,6 @@ const Board: React.FC<BoardProps> = ({
       onShipPlace(position, toggledShip.isHorizontal);
     }
   };
-
   const getCellClass = (cell: typeof board[0][0], position: Position) => {
     const classes = ['cell'];
     
@@ -47,9 +80,25 @@ const Board: React.FC<BoardProps> = ({
       classes.push('hit');
       if (cell.hasShip) {
         classes.push('ship-hit');
+        
+        // Add animation class for recent hit
+        if (recentHit && recentHit.row === position.row && recentHit.col === position.col) {
+          classes.push('animated-hit');
+        }
+        
+        // Check if ship is sunk
+        const ship = ships.find(s => s.id === cell.shipId);
+        if (ship && ship.hits.every(hit => hit)) {
+          classes.push('ship-sinking');
+        }
       }
     } else if (cell.isMiss) {
       classes.push('miss');
+      
+      // Add animation class for recent miss
+      if (recentMiss && recentMiss.row === position.row && recentMiss.col === position.col) {
+        classes.push('animated-miss');
+      }
     } else if (showShips && cell.hasShip) {
       classes.push('ship');
       

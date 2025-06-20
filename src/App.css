@@ -345,6 +345,12 @@
   font-size: 0.95rem;
   display: flex;
   align-items: center;
+  animation: log-entry-appear 0.3s ease-out;
+}
+
+@keyframes log-entry-appear {
+  0% { opacity: 0; transform: translateY(-5px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .game-log-entry:last-child {
