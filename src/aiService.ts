@@ -1,5 +1,6 @@
 // AI service for integrating with LM Studio
 import type { Board, Position } from "./types";
+import { OpenAI } from "openai";
 
 export interface AIConfig {
   endpoint: string;
@@ -22,9 +23,16 @@ export class LMStudioAI {
   private config: AIConfig;
   private gameHistory: string[] = [];
   private lastMoves: { position: Position; wasHit: boolean }[] = [];
+  private openai: OpenAI; // Add OpenAI client instance
 
   constructor(config: AIConfig) {
-    this.config = config;
+    this.config = config;    // Initialize the OpenAI client with custom baseURL pointing to LM Studio
+    this.openai = new OpenAI({
+      baseURL: this.config.endpoint,
+      apiKey: "not-needed", // LM Studio doesn't require an API key by default
+      dangerouslyAllowBrowser: true, // Allow usage in browser
+      // In a Node.js environment we'd use fetch with ProxyAgent, but for browser we can just use the baseURL
+    });
   }
 
   private boardToString(board: Board): string[][] {
@@ -135,49 +143,28 @@ Choose the most strategic coordinate to attack next. Respond with ONLY the coord
           `📡 Sending request to API endpoint: ${this.config.endpoint}`
         );
 
-        const response = await fetch(
-          `${this.config.endpoint}/v1/chat/completions`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              messages: [{ role: "user", content: prompt }],
-              max_tokens: 10,
-              model: this.config.model,
-              temperature: this.config.temperature,
-            }),
-          }
-        );
+        console.log(this.openai);
+
+        const response = await this.openai.chat.completions.create({
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 10,
+          model: this.config.model,
+          temperature: this.config.temperature,
+        });
 
         const apiTime = Date.now() - apiStartTime;
         console.log(
-          `📡 Response status: ${response.status} (took ${apiTime}ms)`
+          `📡 Response received successfully (took ${apiTime}ms)`
         );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`❌ API Error [${response.status}]: ${errorText}`);
-          throw new Error(`API call failed [${response.status}]: ${errorText}`);
-        }
-
-        const data = await response.json();
-
-        if (this.config.debug) {
-          console.log("📊 Full API Response:", JSON.stringify(data));
-        } else {
-          console.log("📊 API Response received successfully");
-        }
 
         // Extract the response text
         let responseText = "";
-        if (data.choices?.[0]?.message?.content) {
-          responseText = data.choices[0].message.content.trim();
-        } else if (data.choices?.[0]?.text) {
-          responseText = data.choices[0].text.trim();
+        if (response.choices?.[0]?.message?.content) {
+          responseText = response.choices[0].message.content.trim();
         } else {
           throw new Error(
             "No valid response content found in API response: " +
-              JSON.stringify(data.choices || [])
+              JSON.stringify(response.choices || [])
           );
         }
 
@@ -192,9 +179,7 @@ Choose the most strategic coordinate to attack next. Respond with ONLY the coord
           const moveDesc = `AI targeted ${String.fromCharCode(
             65 + coordinate.col
           )}${coordinate.row + 1}`;
-          this.gameHistory.push(moveDesc);
-
-          if (this.gameHistory.length > 10) {
+          this.gameHistory.push(moveDesc);          if (this.gameHistory.length > 10) {
             this.gameHistory = this.gameHistory.slice(-8);
           }
 
@@ -320,7 +305,8 @@ Choose the most strategic coordinate to attack next. Respond with ONLY the coord
       return { row: 0, col: 0 }; // Emergency fallback
     }
 
-    return available[Math.floor(Math.random() * available.length)];  }
+    return available[Math.floor(Math.random() * available.length)];
+  }
 
   // Get the last moves with results (for strategic decision making)
   getLastMoves(): { position: Position; wasHit: boolean }[] {
@@ -359,29 +345,14 @@ Choose the most strategic coordinate to attack next. Respond with ONLY the coord
     models?: string[];
     error?: string;
   }> {
-    try {
-      console.log("🔍 Testing LM Studio connection...");
+    try {      console.log("🔍 Testing LM Studio connection...");      // Simple chat completions test using OpenAI SDK
+      const response = await this.openai.chat.completions.create({
+        messages: [{ role: "user", content: "Say hello" }],
+        max_tokens: 10,
+        model: this.config.model,
+      });
 
-      // Simple chat completions test
-      const response = await fetch(
-        `${this.config.endpoint}/v1/chat/completions`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: [{ role: "user", content: "Say hello" }],
-            max_tokens: 10,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return { success: false, error: `API error: ${errorText}` };
-      }
-
-      const data = await response.json();
-      console.log("✅ Connection test successful:", data);
+      console.log("✅ Connection test successful:", response);
 
       return { success: true };
     } catch (error) {

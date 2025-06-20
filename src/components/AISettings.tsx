@@ -16,7 +16,7 @@ const AISettings: React.FC<AISettingsProps> = ({
   onClose
 }) => {
   const [config, setConfig] = useState<AIConfig>({
-    endpoint: 'http://localhost:1234',
+    endpoint: 'http://localhost:1234/v1',
     model: 'local-model',
     temperature: 0.7,
     maxTokens: 50
