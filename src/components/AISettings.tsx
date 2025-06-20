@@ -57,7 +57,7 @@ const AISettings: React.FC<AISettingsProps> = ({
         // Try to fetch available models
         await fetchAvailableModels();
       }
-    } catch (error) {
+    } catch {
       setConnectionStatus('error');
     } finally {
       setIsTestingConnection(false);
