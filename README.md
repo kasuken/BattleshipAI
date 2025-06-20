@@ -1,6 +1,6 @@
 # ⚓ Battleship Game - AI vs AI Edition
 
-A modern, browser-based Battleship game built with TypeScript, React, and Vite that showcases AI vs AI battles using local LLM models. This specialized version focuses exclusively on AI vs AI combat, with two LM Studio-powered AIs (Blue and Red) competing against each other in a fully automated naval battle.
+A browser-based Battleship game built with TypeScript, React, and Vite that showcases AI vs AI battles using local LLM models. This specialized version focuses exclusively on AI vs AI combat, with two LM Studio-powered AIs (Blue and Red) competing against each other in a fully automated naval battle.
 
 ## 🎮 Features
 
