@@ -72,9 +72,7 @@ function App() {
     gamePhase: 'setup',
     winner: null,
     selectedShip: null,
-  }));
-  
-  // AI states
+  }));  // AI states
   const [aiPreviousHits, setAiPreviousHits] = useState<Position[]>([]);
   const [playerAiPreviousHits, setPlayerAiPreviousHits] = useState<Position[]>([]);
   const [showAISettings, setShowAISettings] = useState(false);
@@ -147,14 +145,14 @@ function App() {
     // Log game start
     addGameLog('⚓ New game started! Blue AI goes first.');
   };
-
   // Red AI turn logic
   useEffect(() => {
-    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai' && !aiMoveInProgress) {      const timer = setTimeout(async () => {
+    if (gameState.gamePhase === 'playing' && gameState.currentTurn === 'ai' && !aiMoveInProgress) {
+      const timer = setTimeout(async () => {
         setAiMoveInProgress(true);
         // Initialize with a default value that will be overwritten
         let aiMove: Position = { row: 0, col: 0 };
-          try {
+        try {
           if (aiInstance.current) {
             // Implement a retry mechanism with up to 3 attempts
             let attemptCount = 0;
@@ -229,14 +227,22 @@ function App() {
         const col = String.fromCharCode(65 + aiMove.col);
         const row = aiMove.row + 1;
         const moveCoord = `${col}${row}`;
-        
-        // Update AI tracking
+          // Update AI tracking
         if (hit) {
           aiHitPositions.current.push(aiMove);
           setAiPreviousHits(prev => [...prev, aiMove]);
           addGameLog(`🔴 Red AI fired at ${moveCoord} - HIT! 🔥`);
+          // Record move result for AI learning
+          if (aiInstance.current) {
+            aiInstance.current.recordMoveResult(aiMove, true, sunk, sunk ? newShips.find(ship => 
+              ship.positions.some(pos => pos.row === aiMove.row && pos.col === aiMove.col))?.name : undefined);
+          }
         } else {
           addGameLog(`🔴 Red AI fired at ${moveCoord} - Miss 💦`);
+          // Record move result for AI learning
+          if (aiInstance.current) {
+            aiInstance.current.recordMoveResult(aiMove, false, false);
+          }
         }
 
         // Check if a ship was sunk
