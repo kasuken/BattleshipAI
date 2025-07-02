@@ -105,6 +105,8 @@ const Board: React.FC<BoardProps> = ({
       // Add ship orientation and position classes for styling
       const ship = ships.find(s => s.id === cell.shipId);
       if (ship) {
+        // Add ship type class for different colors
+        classes.push(`ship-${ship.id}`);
         classes.push(ship.isHorizontal ? 'horizontal' : 'vertical');
         
         const shipIndex = ship.positions.findIndex(
@@ -123,6 +125,7 @@ const Board: React.FC<BoardProps> = ({
     if (gamePhase === 'setup' && isPlayer && selectedShip) {
       if (isValidPreviewPosition(position)) {
         classes.push('ship-preview');
+        classes.push(`ship-preview-${selectedShip.id}`);
       }
     }
 
