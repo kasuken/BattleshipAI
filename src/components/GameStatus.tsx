@@ -10,6 +10,8 @@ interface GameStatusProps {
   aiShips: Ship[];
   onStartGame: () => void;
   onResetGame: () => void;
+  blueAIStats: { totalShots: number; hits: number };
+  redAIStats: { totalShots: number; hits: number };
   // aiVsAi is now assumed to always be true
 }
 
@@ -20,7 +22,9 @@ const GameStatus: React.FC<GameStatusProps> = ({
   playerShips,
   aiShips,
   onStartGame,
-  onResetGame
+  onResetGame,
+  blueAIStats,
+  redAIStats
 }) => {
   const getShipStatus = (ships: Ship[]) => {
     const totalShips = ships.length;
@@ -62,6 +66,28 @@ const GameStatus: React.FC<GameStatusProps> = ({
                 <span className="stat-label">Red AI Fleet:</span>
                 <span className="stat-value">
                   {aiStatus.totalShips - aiStatus.sunkShips} / {aiStatus.totalShips}
+                </span>
+              </div>
+            </div>
+
+            {/* Accuracy Stats */}
+            <div className="accuracy-stats">
+              <div className="accuracy-stat">
+                <span className="accuracy-label">Accuracy</span>
+                <span className="accuracy-value">
+                  {blueAIStats.totalShots > 0 
+                    ? `${Math.round((blueAIStats.hits / blueAIStats.totalShots) * 100)}%`
+                    : '0%'
+                  } ({blueAIStats.hits}/{blueAIStats.totalShots})
+                </span>
+              </div>
+              <div className="accuracy-stat">
+                <span className="accuracy-label">Accuracy</span>
+                <span className="accuracy-value">
+                  {redAIStats.totalShots > 0 
+                    ? `${Math.round((redAIStats.hits / redAIStats.totalShots) * 100)}%`
+                    : '0%'
+                  } ({redAIStats.hits}/{redAIStats.totalShots})
                 </span>
               </div>
             </div>

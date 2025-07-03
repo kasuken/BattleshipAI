@@ -85,6 +85,10 @@ function App() {
   const [gameLogs, setGameLogs] = useState<string[]>([]);
   const [showGameLogs, setShowGameLogs] = useState(false);
   
+  // Accuracy tracking states
+  const [blueAIStats, setBlueAIStats] = useState({ totalShots: 0, hits: 0 });
+  const [redAIStats, setRedAIStats] = useState({ totalShots: 0, hits: 0 });
+
   // Function to add entries to the game log (at the beginning to avoid reference issues)
   const addGameLog = useCallback((message: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -228,7 +232,12 @@ function App() {
         const col = String.fromCharCode(65 + aiMove.col);
         const row = aiMove.row + 1;
         const moveCoord = `${col}${row}`;
-          // Update AI tracking
+        // Update AI tracking and stats
+        setRedAIStats(prev => ({ 
+          totalShots: prev.totalShots + 1, 
+          hits: hit ? prev.hits + 1 : prev.hits 
+        }));
+        
         if (hit) {
           aiHitPositions.current.push(aiMove);
           setAiPreviousHits(prev => [...prev, aiMove]);
@@ -378,7 +387,12 @@ function App() {
         const row = playerAiMove.row + 1;
         const moveCoord = `${col}${row}`;
         
-        // Update Player AI tracking
+        // Update Player AI tracking and stats
+        setBlueAIStats(prev => ({ 
+          totalShots: prev.totalShots + 1, 
+          hits: hit ? prev.hits + 1 : prev.hits 
+        }));
+        
         if (hit) {
           playerAiHitPositions.current.push(playerAiMove);
           setPlayerAiPreviousHits(prev => [...prev, playerAiMove]);
@@ -489,6 +503,10 @@ function App() {
     });
     setAiPreviousHits([]);
     setPlayerAiPreviousHits([]);
+    
+    // Reset accuracy stats
+    setBlueAIStats({ totalShots: 0, hits: 0 });
+    setRedAIStats({ totalShots: 0, hits: 0 });
     
     // Then automatically start a new game after a short delay
     setTimeout(() => {
@@ -639,6 +657,8 @@ function App() {
               aiShips={gameState.aiShips}
               onStartGame={handleStartGame}
               onResetGame={handleResetGame}
+              blueAIStats={blueAIStats}
+              redAIStats={redAIStats}
             />
           </div>
 
