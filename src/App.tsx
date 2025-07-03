@@ -112,17 +112,30 @@ function App() {
   const playerAiHitPositions = useRef<Position[]>([]);
   const playerAiSunkShips = useRef<string[]>([]);
 
-  // Initialize AI with default config
+  // Initialize AI with default config and different strategies
   useEffect(() => {
-    const defaultConfig: AIConfig = {
+    // Red AI uses Aggressive Hunter strategy
+    const redAIConfig: AIConfig = {
       endpoint: 'http://localhost:1234/v1',
       model: 'local-model',
       temperature: 0.7,
       maxTokens: 50,
-      debug: true
+      debug: true,
+      strategy: 'AGGRESSIVE_HUNTER'
     };
-    aiInstance.current = new LMStudioAI(defaultConfig);
-    playerAiInstance.current = new LMStudioAI(defaultConfig);
+    
+    // Blue AI uses Methodical Strategist strategy
+    const blueAIConfig: AIConfig = {
+      endpoint: 'http://localhost:1234/v1',
+      model: 'local-model',
+      temperature: 0.5, // Slightly lower temperature for more consistent strategic play
+      maxTokens: 50,
+      debug: true,
+      strategy: 'METHODICAL_STRATEGIST'
+    };
+    
+    aiInstance.current = new LMStudioAI(redAIConfig); // Red AI
+    playerAiInstance.current = new LMStudioAI(blueAIConfig); // Blue AI
   }, []);
 
   // Initialize AI ships
@@ -629,6 +642,7 @@ function App() {
           <div className="board-column">
             <div className="board-wrapper player-board">
               <h2>🔵 Blue AI Fleet</h2>
+              <p className="strategy-indicator">📊 Methodical Strategist</p>
               <Board 
                 board={gameState.playerBoard}
                 ships={gameState.playerShips}
@@ -666,6 +680,7 @@ function App() {
           <div className="board-column">
             <div className="board-wrapper enemy-board">
               <h2>🔴 Red AI Fleet</h2>
+              <p className="strategy-indicator">🔥 Aggressive Hunter</p>
               <Board 
                 board={gameState.aiBoard}
                 ships={gameState.aiShips}

@@ -447,6 +447,19 @@
   font-family: monospace;
 }
 
+/* Strategy Indicator Styles */
+.strategy-indicator {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* Responsive Design */
 @media (min-width: 1200px) {
   .game-boards {

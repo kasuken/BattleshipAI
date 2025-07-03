@@ -1,6 +1,7 @@
 // AI service for integrating with LM Studio
 import type { Board, Position } from "./types";
 import { OpenAI } from "openai";
+import { AI_STRATEGIES, type AIStrategy, type StrategyType, type GameState } from "./aiStrategies";
 
 export interface AIConfig {
   endpoint: string;
@@ -8,15 +9,7 @@ export interface AIConfig {
   temperature: number;
   maxTokens: number;
   debug?: boolean;
-}
-
-export interface GameState {
-  board: string[][];
-  previousMoves: Position[];
-  hitPositions: Position[];
-  missPositions: Position[];
-  sunkShips: string[];
-  gameHistory: string[];
+  strategy?: StrategyType;
 }
 
 export class LMStudioAI {
@@ -24,9 +17,12 @@ export class LMStudioAI {
   private gameHistory: string[] = [];
   private lastMoves: { position: Position; wasHit: boolean }[] = [];
   private openai: OpenAI; // Add OpenAI client instance
+  private strategy: AIStrategy;
 
   constructor(config: AIConfig) {
-    this.config = config;    // Initialize the OpenAI client with custom baseURL pointing to LM Studio
+    this.config = config;
+    // Set strategy based on config, default to Aggressive Hunter
+    this.strategy = config.strategy ? AI_STRATEGIES[config.strategy] : AI_STRATEGIES.AGGRESSIVE_HUNTER;    // Initialize the OpenAI client with custom baseURL pointing to LM Studio
     this.openai = new OpenAI({
       baseURL: this.config.endpoint,
       apiKey: "not-needed", // LM Studio doesn't require an API key by default
@@ -56,60 +52,8 @@ export class LMStudioAI {
   }
 
   private createGameStateContext(gameState: GameState): string {
-    const boardDisplay = this.formatBoardForAI(gameState.board);
-
-    // Format the last moves with their results
-    let lastMovesInfo = "";
-    if (this.lastMoves.length > 0) {
-      lastMovesInfo =
-        "\nLast moves and results:\n" +
-        this.lastMoves
-          .map((move) => {
-            const coord = `${String.fromCharCode(65 + move.position.col)}${
-              move.position.row + 1
-            }`;
-            return `- ${coord}: ${move.wasHit ? "HIT" : "MISS"}`;
-          })
-          .join("\n");
-    }
-
-    return `BATTLESHIP AI - Choose your next move.
-
-Ships are placed on a 10x10 grid (A1 to J10).
-Ships fleet:
-- Carrier (5 cells)
-- Battleship (4 cells)
-- Cruiser (3 cells)
-- Submarine (3 cells)
-- Destroyer (2 cells)
-
-Current Board State:
-${boardDisplay}
-
-Legend: '.' = water, 'H' = hit, 'M' = miss
-
-Previous moves: ${
-      gameState.previousMoves
-        .map((pos) => `${String.fromCharCode(65 + pos.col)}${pos.row + 1}`)
-        .join(", ") || "None"
-    }
-
-Current hits: ${
-      gameState.hitPositions
-        .map((pos) => `${String.fromCharCode(65 + pos.col)}${pos.row + 1}`)
-        .join(", ") || "None"
-    }
-
-Ships sunk: ${gameState.sunkShips.join(", ") || "None"}${lastMovesInfo}
-
-Battleship Strategy Guide:
-1. If you just got a HIT in your last move, you MUST target ONLY an adjacent cell (up, down, left, right), based on the Ship Fleet information and previous hits direction
-2. If you have multiple HITS in a line, you MUST continue in that direction (based on the Ship Fleet information and previous hits direction)
-3. If you hit the end of a ship (got a MISS after HITs), you MUST try the opposite direction (based on the Ship Fleet information and previous hits direction)
-4. Space your shots efficiently if searching for new ships
-5. Remember ships are 2-5 cells long and cannot be placed diagonally
-
-Choose the most strategic coordinate to attack next. Respond with ONLY the coordinate like "A1", "B5", or "J10".`;
+    // Use the strategy's prompt creation method
+    return this.strategy.createPrompt(gameState, this.lastMoves);
   }
 
   async makeMove(
